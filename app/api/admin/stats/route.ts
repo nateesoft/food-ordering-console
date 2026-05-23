@@ -4,16 +4,19 @@ import { verifyToken } from '@/lib/jwt';
 const SERVICE_URL = process.env.SERVICE_URL || 'http://localhost:5555';
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get('fc_session')?.value;
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const sessionToken = req.cookies.get('fc_session')?.value;
+  if (!sessionToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const payload = verifyToken(token);
+  const payload = verifyToken(sessionToken);
   if (!payload || payload.role !== 'system_admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const serviceToken = req.cookies.get('fc_service_token')?.value;
+  if (!serviceToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const serviceRes = await fetch(`${SERVICE_URL}/api/console/auth/admin/stats`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${serviceToken}` },
   }).catch(() => null);
 
   if (!serviceRes) {

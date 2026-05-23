@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { signToken } from '@/lib/jwt';
 
 const SERVICE_URL = process.env.SERVICE_URL || 'http://localhost:5555';
 
@@ -21,19 +22,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: data.message || 'เกิดข้อผิดพลาด' }, { status: serviceRes.status });
   }
 
+  const sessionToken = signToken({
+    userId: data.user.id,
+    username: data.user.username,
+    role: data.user.role,
+    companyName: data.user.companyName,
+  });
+
   const res = NextResponse.json({
     role: data.user.role,
     username: data.user.username,
     companyName: data.user.companyName,
   });
 
-  res.cookies.set('fc_session', data.access_token, {
+  const cookieOpts = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
-  });
+  };
+
+  res.cookies.set('fc_session', sessionToken, cookieOpts);
+  res.cookies.set('fc_service_token', data.access_token, cookieOpts);
 
   return res;
 }

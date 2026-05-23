@@ -2,12 +2,12 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, LogIn, UtensilsCrossed } from 'lucide-react';
 import { apiPath } from '@/lib/api-path';
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export default function LoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,9 +34,9 @@ export default function LoginPage() {
       }
 
       if (data.role === 'system_admin') {
-        router.push('/admin');
+        window.location.href = `${BASE_PATH}/admin`;
       } else {
-        router.push('/customer');
+        window.location.href = `${BASE_PATH}/customer`;
       }
     } catch {
       setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
