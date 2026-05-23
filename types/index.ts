@@ -1,94 +1,282 @@
-export type UserRole = 'customer' | 'system_admin';
-
-export interface Printer {
-  id: string;
+// Add-on/Topping interface
+export interface AddOn {
+  id: number;
   name: string;
-  type: 'receipt' | 'kitchen' | 'label';
-  ipAddress: string;
-  port?: number;
-  branchId?: string;
+  price: number;
+  category: string; // e.g., 'topping', 'side', 'sauce', 'extra'
 }
 
-export interface Table {
-  id: string;
-  number: string;
-  capacity: number;
-  branchId: string;
+// Add-on Group (กลุ่มของ Add-on)
+export interface AddOnGroup {
+  id: number;
+  name: string;
+  description?: string;
+  price: number; // ราคาของกลุ่ม (อาจถูกกว่าซื้อทีละตัว)
+  addOnIds: number[]; // รายการ Add-on ID ที่อยู่ในกลุ่มนี้
+  category: string; // e.g., 'beverage-set', 'dessert-set', 'combo'
+  image?: string;
 }
 
-export interface StaffMember {
-  id: string;
+// Set item component (for set meals)
+export interface SetComponent {
+  id: number;
   name: string;
-  role: 'manager' | 'cashier' | 'waiter' | 'chef' | 'other';
-  phone?: string;
-  branchId?: string;
+  description?: string;
+  quantity: number;
+}
+
+// Nested Menu System - สำหรับเมนูที่มีการเลือกหลายชั้น
+export interface NestedMenuOption {
+  id: number;
+  name: string;
+  description?: string;
+  price: number; // ราคาเพิ่มเติมจากการเลือกตัวเลือกนี้
+  image?: string;
+  type: 'single' | 'group'; // ประเภทของตัวเลือก
+  // ถ้ามี childOptions แสดงว่ายังมีชั้นถัดไป
+  childOptions?: NestedMenuOption[];
+  // กำหนดว่าต้องเลือกชั้นถัดไปหรือไม่
+  requireChildSelection?: boolean;
+  // กำหนดจำนวนที่เลือกได้ในชั้นถัดไป
+  minChildSelections?: number; // เลือกได้อย่างน้อย (default: 0 = ไม่บังคับ)
+  maxChildSelections?: number; // เลือกได้สูงสุด (default: 1 = เลือกได้ 1 อย่าง)
+}
+
+export interface NestedMenuConfig {
+  enabled: boolean; // เปิดใช้งาน Nested Menu หรือไม่
+  rootOptions: number[]; // IDs ของตัวเลือกชั้นแรก (for static data compatibility)
+  rootOptionObjects?: NestedMenuOption[]; // Full nested option objects from API
+  requireSelection: boolean; // บังคับให้เลือกหรือไม่
+  minSelections?: number; // เลือกได้อย่างน้อย
+  maxSelections?: number; // เลือกได้สูงสุด
+}
+
+// ใช้เก็บตัวเลือกที่ลูกค้าเลือก
+export interface SelectedNestedOption {
+  optionId: number;
+  option: NestedMenuOption;
+  childSelections?: SelectedNestedOption[]; // ตัวเลือกในชั้นถัดไป
 }
 
 export interface MenuItem {
-  id: string;
+  id: number;
+  code: string;
   name: string;
   category: string;
   price: number;
-  description?: string;
+  image: string;
+  description: string;
+  rating?: number;
+  reviewCount?: number;
+  // New fields for menu management
+  type: 'single' | 'set' | 'group'; // Type of menu item
+  setComponents?: SetComponent[]; // For set meals, list of items included
+  availableAddOns?: number[]; // IDs of add-ons available for this item
+  availableAddOnGroups?: number[]; // IDs of add-on groups available for this item
+  nestedMenuConfig?: NestedMenuConfig; // Configuration for nested menu
+  isActive?: boolean; // Whether this item is currently available
+  isOutOfStock?: boolean; // Whether this item is out of stock due to ingredients
+  insufficientIngredients?: string[]; // List of insufficient ingredient names
+}
+
+export interface CartItem extends MenuItem {
+  quantity: number;
+  specialInstructions?: string;
+  cartItemId: string;
+  diningOption: 'dine-in' | 'takeaway';
+  itemStatus?: 'preparing' | 'completed' | 'delivered';
+  selectedAddOns?: AddOn[]; // Add-ons selected by customer
+  selectedAddOnGroups?: AddOnGroup[]; // Add-on groups selected by customer
+  selectedNestedOptions?: SelectedNestedOption[]; // Nested menu selections
+}
+
+export interface Order {
+  orderId: string;
+  items: CartItem[];
+  totalAmount: number;
+  totalItems: number;
+  orderDate: Date;
+  status: 'completed' | 'preparing' | 'delivered';
+  branchId: string;
+  tableNumber?: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  type: 'staff' | 'utensils' | 'payment';
+  timestamp: Date;
+  details?: string;
+  items?: string[];
+  status: 'pending' | 'completed';
+  branchId: string;
+  tableNumber?: string;
+}
+
+export interface Table {
+  id: number;
+  number: string;
+  capacity: number;
+  status: 'available' | 'occupied' | 'reserved' | 'billing' | 'cleaning';
+  position: { x: number; y: number };
+  size: 'small' | 'medium' | 'large';
+  shape: 'square' | 'circle' | 'rectangle' | 'counter';
+  currentGuests?: number;
+  mergedWith?: number[];
+  zone?: string;
+}
+
+export interface TableSession {
+  id: number;
+  tableId: number;
+  openedBy: string;
+  customerCount: number;
+  customerGender: string | null;
+  customerNationality: string | null;
+  orderType: string;
+  status: string;
+  openedAt: string;
+  closedAt: string | null;
+}
+
+export type Category = string;
+
+// Queue System for Kiosk
+export interface QueueTicket {
+  queueId: string; // รหัสคิว เช่น "A001"
+  queueNumber: number; // หมายเลขคิว เช่น 1, 2, 3
+  orderType: 'dine-in' | 'takeaway'; // ประเภทการสั่ง
+  items: CartItem[]; // รายการอาหารที่สั่ง
+  totalAmount: number; // ยอดรวม
+  totalItems: number; // จำนวนรายการ
+  status: 'waiting' | 'preparing' | 'ready' | 'completed' | 'cancelled'; // สถานะคิว
+  createdAt: Date; // วันเวลาที่สร้าง
+  estimatedTime?: number; // เวลาโดยประมาณ (นาที)
+  calledAt?: Date; // วันเวลาที่เรียกคิว
+  completedAt?: Date; // วันเวลาที่เสร็จสิ้น
+  customerName?: string; // ชื่อลูกค้า (optional)
+  memberId?: string; // รหัสสมาชิก (optional)
+  paymentMethod?: 'cash' | 'credit-card' | 'qr-code' | 'mobile-banking'; // วิธีการชำระเงิน
+}
+
+// ===== Inventory / Stock Management =====
+
+export type IngredientUnit = 'GRAM' | 'KILOGRAM' | 'MILLILITER' | 'LITER' | 'PIECE' | 'TABLESPOON' | 'TEASPOON' | 'CUP';
+
+export type TransactionType = 'STOCK_IN' | 'STOCK_OUT' | 'ORDER_DEDUCTION' | 'ADJUSTMENT';
+
+export interface Ingredient {
+  id: number;
+  name: string;
+  unit: IngredientUnit;
+  currentStock: number;
+  minStock: number;
+  costPerUnit: number | null;
   isActive: boolean;
-}
-
-export interface Branch {
-  id: string;
-  name: string;
-  address: string;
-  phone?: string;
-  tables: Table[];
-  staff: StaffMember[];
-  printers: Printer[];
-}
-
-export interface Company {
-  id: string;
-  name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  menus: MenuItem[];
-  branches: Branch[];
-}
-
-export interface User {
-  id: string;
-  username: string;
-  password: string;
-  role: UserRole;
-  company?: Company;
-  resetToken?: string;
-  resetTokenExpiry?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface RegisterInput {
-  // Account
+export interface MenuItemIngredient {
+  id: number;
+  menuItemId: number;
+  ingredientId: number;
+  quantityUsed: number;
+  ingredient: Ingredient;
+}
+
+export interface InventoryTransaction {
+  id: number;
+  ingredientId: number;
+  type: TransactionType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  orderId: string | null;
+  notes: string | null;
+  performedBy: string | null;
+  createdAt: string;
+  ingredient: Ingredient;
+}
+
+export interface MenuAvailability {
+  menuItemId: number;
+  available: boolean;
+  insufficientIngredients: string[];
+}
+
+// ===== POS / Payment =====
+
+export type PaymentMethod = 'CASH' | 'TRANSFER' | 'CREDIT_CARD';
+export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED';
+
+export interface Payment {
+  id: number;
+  receiptNumber: string;
+  orderId: number;
+  order?: any;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  subtotal: number;
+  serviceCharge: number;
+  vat: number;
+  discountAmount: number;
+  discountPoints: number;
+  totalAmount: number;
+  paidAmount: number;
+  changeAmount: number;
+  memberId: string | null;
+  memberName: string | null;
+  pointsEarned: number;
+  cashierName: string | null;
+  note: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  promotionId: number | null;
+  promotionDiscount: number;
+  promotionName: string | null;
+  couponCode: string | null;
+  splitPayments?: { method: PaymentMethod; amount: number }[] | null;
+}
+
+export interface PaymentSummary {
+  totalRevenue: number;
+  totalTransactions: number;
+  byMethod: {
+    CASH: { count: number; amount: number };
+    TRANSFER: { count: number; amount: number };
+    CREDIT_CARD: { count: number; amount: number };
+  };
+  totalDiscount: number;
+  totalPointsEarned: number;
+  totalPointsRedeemed: number;
+}
+
+export interface Member {
+  id: number;
+  memberId: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  points: number;
+  tier: string;
+}
+
+// Console-specific types
+export interface User {
+  id: string;
   username: string;
   password: string;
-  // Company (required)
-  companyName: string;
-  companyAddress?: string;
-  companyPhone?: string;
-  companyEmail?: string;
-  // Branches
-  branches?: Omit<Branch, 'id'>[];
-  // Menus
-  menus?: Omit<MenuItem, 'id'>[];
-  // Staff
-  staff?: Omit<StaffMember, 'id'>[];
-  // Tables
-  tables?: Omit<Table, 'id'>[];
-  // Printers
-  printers?: Omit<Printer, 'id'>[];
+  role: 'system_admin' | 'customer';
+  companyName?: string;
+  createdAt: string;
+  updatedAt: string;
+  resetToken?: string;
+  resetTokenExpiry?: string;
 }
 
 export interface SessionPayload {
   userId: string;
   username: string;
-  role: UserRole;
-  companyName?: string;
+  role: 'system_admin' | 'customer';
+  companyName: string;
 }
