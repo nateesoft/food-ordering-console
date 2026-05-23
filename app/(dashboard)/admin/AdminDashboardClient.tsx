@@ -73,23 +73,23 @@ export default function AdminDashboardClient() {
   ) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-indigo-900 text-white px-8 py-10 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-start justify-between flex-wrap gap-4">
+    <div className="bg-gray-50 min-h-full">
+      <div className="p-6 md:p-8">
+        {/* Page heading */}
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">🛡️ Admin Management Dashboard</h1>
-            <p className="text-slate-300 text-lg">ภาพรวมลูกค้าและข้อมูลทั้งหมดในระบบ</p>
+            <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+            <p className="text-gray-500 text-sm mt-1">ภาพรวมลูกค้าและข้อมูลทั้งหมดในระบบ</p>
           </div>
           <button onClick={fetchStats}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold transition border border-white/20">
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition shadow-sm">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             รีเฟรช
           </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="px-6 md:px-8 pb-8">
         {loading && !stats && (
           <div className="flex items-center justify-center py-20">
             <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />

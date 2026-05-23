@@ -105,14 +105,11 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/admin')} className="p-2 rounded-lg bg-white/20 hover:bg-white/30">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
             <div>
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <BarChart3 className="w-8 h-8" /> Reports & Analytics

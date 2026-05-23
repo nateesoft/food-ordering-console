@@ -299,7 +299,7 @@ export default function InventoryManagementPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
+    <div className="bg-gradient-to-br from-emerald-50 to-teal-50">
       {/* Success Message */}
       {successMsg && (
         <div className="fixed top-4 right-4 z-[100] bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg font-semibold animate-bounce">
@@ -322,13 +322,6 @@ export default function InventoryManagementPage() {
             </div>
             <div className="flex items-center gap-2">
               <BranchSelector />
-              <button
-                onClick={() => router.push('/customer/orders')}
-                className="flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-all"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">กลับ</span>
-              </button>
             </div>
           </div>
         </div>

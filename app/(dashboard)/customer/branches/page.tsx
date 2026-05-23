@@ -143,14 +143,11 @@ export default function BranchManagementPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white p-6 shadow-xl">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-4">
-            <Link href="/admin" className="hover:bg-white/20 p-2 rounded-lg transition-colors">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
             <div>
               <h1 className="text-4xl font-bold">Branch Management</h1>
               <p className="text-xl text-teal-100 mt-1">จัดการสาขา เพิ่ม/แก้ไข/ลบ</p>

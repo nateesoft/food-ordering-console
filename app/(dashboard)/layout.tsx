@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/jwt';
-import Navbar from '@/components/dashboard/Navbar';
+import Sidebar from '@/components/dashboard/Sidebar';
 import { BranchProvider } from '@/contexts/BranchContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 
@@ -15,9 +15,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <BranchProvider>
       <LanguageProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar username={session.username} role={session.role} companyName={session.companyName} />
-          <main>{children}</main>
+        <div className="flex h-screen overflow-hidden bg-gray-50">
+          <Sidebar
+            username={session.username}
+            role={session.role}
+            companyName={session.companyName}
+          />
+          <main className="flex-1 overflow-y-auto bg-gray-50">
+            {children}
+          </main>
         </div>
       </LanguageProvider>
     </BranchProvider>

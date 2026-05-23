@@ -293,7 +293,7 @@ export default function MenuManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+    <div className="bg-gradient-to-br from-orange-50 to-red-50">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -310,21 +310,6 @@ export default function MenuManagementPage() {
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <BranchSelector />
-              <button
-                onClick={() => router.push('/customer/orders')}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
-              >
-                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>ออเดอร์</span>
-              </button>
-
-              <button
-                onClick={() => router.push('/customer')}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-              >
-                <Home className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>หน้าจัดการ</span>
-              </button>
             </div>
           </div>
         </div>

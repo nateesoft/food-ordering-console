@@ -207,18 +207,12 @@ export default function StaffManagementPage() {
   const staffCount = users.filter((u) => u.role === 'STAFF').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-xl">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-4">
-              <Link
-                href="/admin"
-                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
               <div>
                 <h1 className="text-3xl font-bold flex items-center gap-3">
                   <Users className="w-8 h-8" />

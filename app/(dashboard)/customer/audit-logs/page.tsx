@@ -173,14 +173,11 @@ export default function AuditLogsPage() {
   ).reduce((sum, s) => sum + s.count, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-700 to-slate-700 text-white p-6 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => window.history.back()} className="p-2 hover:bg-white/10 rounded-lg transition">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
             <FileText className="w-8 h-8" />
             <div>
               <h1 className="text-2xl font-bold">Audit Logs</h1>

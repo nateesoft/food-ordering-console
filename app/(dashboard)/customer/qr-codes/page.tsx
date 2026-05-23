@@ -234,7 +234,7 @@ export default function QRCodesAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+    <div className="bg-gradient-to-br from-orange-50 to-red-50">
       {/* Header - Sticky */}
       <div className="sticky top-0 z-50 bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -267,24 +267,6 @@ export default function QRCodesAdminPage() {
             >
               <Download className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>ดาวน์โหลดทั้งหมด</span>
-            </button>
-
-            <button
-              onClick={() => router.push('/customer/orders')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
-            >
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">ออเดอร์</span>
-              <span className="sm:hidden">ออเดอร์</span>
-            </button>
-
-            <button
-              onClick={() => router.push('/customer')}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all"
-            >
-              <Home className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">หน้าจัดการ</span>
-              <span className="sm:hidden">หลัก</span>
             </button>
           </div>
           </div>
