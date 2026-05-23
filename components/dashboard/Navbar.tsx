@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UtensilsCrossed, LogOut, User, ChevronDown } from 'lucide-react';
+import { apiPath } from '@/lib/api-path';
 
 interface NavbarProps {
   username: string;
@@ -15,7 +16,7 @@ export default function Navbar({ username, role, companyName }: NavbarProps) {
   const [open, setOpen] = useState(false);
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch(apiPath('/api/auth/logout'), { method: 'POST' });
     router.push('/login');
   }
 

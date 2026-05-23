@@ -7,6 +7,7 @@ import {
   Building2, GitBranch, UtensilsCrossed, Users, Armchair,
   Printer, UserPlus, ChevronRight, ChevronLeft, Check, Plus, Trash2, Eye, EyeOff,
 } from 'lucide-react';
+import { apiPath } from '@/lib/api-path';
 
 // ---- Types ----
 interface BranchInput { name: string; address: string; phone: string }
@@ -107,7 +108,7 @@ export default function RegisterPage() {
     }));
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(apiPath('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,41 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { findUserByUsername, seedSystemAdmin } from '@/lib/db';
-import { signToken } from '@/lib/jwt';
+
+const SERVICE_URL = process.env.SERVICE_URL || 'http://localhost:5555';
 
 export async function POST(req: NextRequest) {
-  seedSystemAdmin();
+  const body = await req.json();
 
-  const { username, password } = await req.json();
+  const serviceRes = await fetch(`${SERVICE_URL}/api/console/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => null);
 
-  if (!username || !password) {
-    return NextResponse.json({ error: 'กรุณากรอก username และ password' }, { status: 400 });
+  if (!serviceRes) {
+    return NextResponse.json({ error: 'ไม่สามารถเชื่อมต่อกับ service ได้' }, { status: 503 });
   }
 
-  const user = findUserByUsername(username);
-  if (!user) {
-    return NextResponse.json({ error: 'username หรือ password ไม่ถูกต้อง' }, { status: 401 });
-  }
+  const data = await serviceRes.json();
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) {
-    return NextResponse.json({ error: 'username หรือ password ไม่ถูกต้อง' }, { status: 401 });
+  if (!serviceRes.ok) {
+    return NextResponse.json({ error: data.message || 'เกิดข้อผิดพลาด' }, { status: serviceRes.status });
   }
-
-  const token = signToken({
-    userId: user.id,
-    username: user.username,
-    role: user.role,
-    companyName: user.company?.name,
-  });
 
   const res = NextResponse.json({
-    role: user.role,
-    username: user.username,
-    companyName: user.company?.name,
+    role: data.user.role,
+    username: data.user.username,
+    companyName: data.user.companyName,
   });
 
-  res.cookies.set('fc_session', token, {
+  res.cookies.set('fc_session', data.access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

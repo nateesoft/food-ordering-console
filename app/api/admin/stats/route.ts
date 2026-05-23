@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
-import { getAllUsers } from '@/lib/db';
+
+const SERVICE_URL = process.env.SERVICE_URL || 'http://localhost:5555';
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('fc_session')?.value;
@@ -11,33 +12,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const users = getAllUsers().filter((u) => u.role === 'customer');
+  const serviceRes = await fetch(`${SERVICE_URL}/api/console/auth/admin/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => null);
 
-  const totalCustomers = users.length;
-  const allBranches = users.flatMap((u) => u.company?.branches || []);
-  const allMenus = users.flatMap((u) => u.company?.menus || []);
-  const allStaff = allBranches.flatMap((b) => b.staff || []);
-  const allTables = allBranches.flatMap((b) => b.tables || []);
-  const allPrinters = allBranches.flatMap((b) => b.printers || []);
+  if (!serviceRes) {
+    return NextResponse.json({ error: 'ไม่สามารถเชื่อมต่อกับ service ได้' }, { status: 503 });
+  }
 
-  const customerList = users.map((u) => ({
-    id: u.id,
-    username: u.username,
-    companyName: u.company?.name || '-',
-    branchCount: u.company?.branches?.length || 0,
-    menuCount: u.company?.menus?.length || 0,
-    staffCount: (u.company?.branches || []).flatMap((b) => b.staff || []).length,
-    tableCount: (u.company?.branches || []).flatMap((b) => b.tables || []).length,
-    createdAt: u.createdAt,
-  }));
+  if (!serviceRes.ok) {
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาด' }, { status: serviceRes.status });
+  }
 
-  return NextResponse.json({
-    totalCustomers,
-    totalBranches: allBranches.length,
-    totalMenus: allMenus.length,
-    totalStaff: allStaff.length,
-    totalTables: allTables.length,
-    totalPrinters: allPrinters.length,
-    customerList,
-  });
+  return NextResponse.json(await serviceRes.json());
 }

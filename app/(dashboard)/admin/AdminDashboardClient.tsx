@@ -5,6 +5,7 @@ import {
   Users, Building2, UtensilsCrossed, UserCheck, Armchair, Printer,
   TrendingUp, RefreshCw, Calendar, Mail,
 } from 'lucide-react';
+import { apiPath } from '@/lib/api-path';
 
 interface CustomerRow {
   id: string;
@@ -53,7 +54,7 @@ export default function AdminDashboardClient() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/stats');
+      const res = await fetch(apiPath('/api/admin/stats'));
       if (!res.ok) throw new Error('Unauthorized');
       const data = await res.json();
       setStats(data);

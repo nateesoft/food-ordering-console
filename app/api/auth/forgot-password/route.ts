@@ -1,35 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
-import { findUserByUsername, updateUser } from '@/lib/db';
-import { sendResetPasswordEmail } from '@/lib/email';
+
+const SERVICE_URL = process.env.SERVICE_URL || 'http://localhost:5555';
 
 export async function POST(req: NextRequest) {
-  const { username } = await req.json();
+  const body = await req.json();
 
-  if (!username) {
-    return NextResponse.json({ error: 'กรุณากรอก email' }, { status: 400 });
+  const serviceRes = await fetch(`${SERVICE_URL}/api/console/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => null);
+
+  if (!serviceRes) {
+    return NextResponse.json({ error: 'ไม่สามารถเชื่อมต่อกับ service ได้' }, { status: 503 });
   }
 
-  const user = findUserByUsername(username);
-  // Always return success to prevent email enumeration
-  if (!user) {
-    return NextResponse.json({ message: 'หากบัญชีนี้มีอยู่ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว' });
+  const data = await serviceRes.json();
+
+  if (!serviceRes.ok) {
+    const errorMsg = Array.isArray(data.message) ? data.message[0] : data.message || 'เกิดข้อผิดพลาด';
+    return NextResponse.json({ error: errorMsg }, { status: serviceRes.status });
   }
 
-  const token = uuidv4();
-  const expiry = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
-
-  updateUser(user.id, { resetToken: token, resetTokenExpiry: expiry });
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const resetLink = `${baseUrl}/reset-password?token=${token}`;
-
-  try {
-    await sendResetPasswordEmail(username, resetLink);
-  } catch (err) {
-    console.error('Failed to send email:', err);
-    // Don't expose email errors to the client
-  }
-
-  return NextResponse.json({ message: 'หากบัญชีนี้มีอยู่ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว' });
+  return NextResponse.json({ message: data.message });
 }
