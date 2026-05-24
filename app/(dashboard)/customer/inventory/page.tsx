@@ -13,6 +13,7 @@ import {
   TransactionType, MenuAvailability
 } from '@/types';
 import BranchSelector from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 
 const UNITS: { value: IngredientUnit; label: string }[] = [
   { value: 'GRAM', label: 'กรัม (g)' },
@@ -38,6 +39,7 @@ const TRANSACTION_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function InventoryManagementPage() {
+  const { selectedBranch } = useBranch();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes' | 'stock' | 'transactions'>('ingredients');
 
@@ -147,7 +149,8 @@ export default function InventoryManagementPage() {
   useEffect(() => {
     loadIngredients();
     loadMenuItems();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranch?.id]);
 
   useEffect(() => {
     if (activeTab === 'recipes') {

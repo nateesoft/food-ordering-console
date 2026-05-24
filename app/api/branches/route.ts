@@ -10,7 +10,18 @@ export async function GET(req: NextRequest) {
   const token = getServiceToken(req);
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const res = await fetch(`${SERVICE_URL}/api/console/auth/company`, {
+  const { searchParams } = new URL(req.url);
+  const companyId = searchParams.get('companyId');
+  const isActive = searchParams.get('isActive');
+
+  const params = new URLSearchParams();
+  if (companyId) params.set('companyId', companyId);
+  if (isActive !== null) params.set('isActive', isActive);
+
+  const query = params.toString();
+  const url = `${SERVICE_URL}/api/branches${query ? `?${query}` : ''}`;
+
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   }).catch(() => null);
 
@@ -19,14 +30,13 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data, { status: res.status });
 }
 
-export async function PATCH(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const token = getServiceToken(req);
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { id: _id, ...body } = await req.json();
-
-  const res = await fetch(`${SERVICE_URL}/api/console/auth/company`, {
-    method: 'PATCH',
+  const body = await req.json();
+  const res = await fetch(`${SERVICE_URL}/api/branches`, {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

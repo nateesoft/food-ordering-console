@@ -22,6 +22,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 
 interface StaffUser {
   id: number;
@@ -41,6 +42,7 @@ const roleConfig: Record<string, { label: string; color: string; icon: any }> = 
 };
 
 export default function StaffManagementPage() {
+  const { selectedBranch } = useBranch();
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -78,7 +80,8 @@ export default function StaffManagementPage() {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranch?.id]);
 
   // Filter users
   const filteredUsers = users.filter((user) => {

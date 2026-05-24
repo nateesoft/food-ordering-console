@@ -10,6 +10,7 @@ import { DndContext, useDraggable, DragEndEvent, PointerSensor, useSensor, useSe
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 
 // ===== Types =====
 
@@ -137,6 +138,7 @@ function DraggableTable({ table }: { table: TableData }) {
 
 export default function TableManagementPage() {
   const router = useRouter();
+  const { selectedBranch } = useBranch();
   const [activeTab, setActiveTab] = useState<TabType>('tables');
 
   // Tables state
@@ -198,7 +200,7 @@ export default function TableManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranch?.id]);
 
   useEffect(() => {
     loadTables();

@@ -4,10 +4,14 @@ import { useState, useEffect } from 'react';
 import { usePrinter } from '@/lib/hooks/usePrinter';
 import { PrinterService } from '@/lib/printer/printer-service';
 import type { ConnectionType } from '@/lib/printer/printer-service';
-import Link from 'next/link';
+import BranchSelector from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 
 export default function PrinterSettingsPage() {
   const printer = usePrinter();
+  const { selectedBranch } = useBranch();
+  const configKey = `printer_config_${selectedBranch?.id ?? 'default'}`;
+
   const [connectionType, setConnectionType] = useState<ConnectionType>('serial');
   const [baudRate, setBaudRate] = useState(9600);
   const [paperWidth, setPaperWidth] = useState(48);
@@ -22,7 +26,7 @@ export default function PrinterSettingsPage() {
   useEffect(() => {
     setSupportedConnections(PrinterService.getSupportedConnections());
     try {
-      const saved = localStorage.getItem('printer_config');
+      const saved = localStorage.getItem(configKey);
       if (saved) {
         const config = JSON.parse(saved);
         if (config.connectionType) setConnectionType(config.connectionType);
@@ -33,9 +37,19 @@ export default function PrinterSettingsPage() {
         if (config.shopPhone) setShopPhone(config.shopPhone);
         if (config.shopTaxId) setShopTaxId(config.shopTaxId);
         if (config.footerText) setFooterText(config.footerText);
+      } else {
+        // Reset to defaults when no config for this branch
+        setConnectionType('serial');
+        setBaudRate(9600);
+        setPaperWidth(48);
+        setShopName('ร้านอาหาร');
+        setShopAddress('');
+        setShopPhone('');
+        setShopTaxId('');
+        setFooterText('ขอบคุณที่ใช้บริการ');
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [configKey]);
 
   const handleSave = () => {
     const config = {
@@ -48,7 +62,7 @@ export default function PrinterSettingsPage() {
       shopTaxId,
       footerText,
     };
-    localStorage.setItem('printer_config', JSON.stringify(config));
+    localStorage.setItem(configKey, JSON.stringify(config));
     printer.updateConfig(config);
     setSaveMessage('บันทึกสำเร็จ!');
     setTimeout(() => setSaveMessage(''), 3000);
@@ -58,8 +72,9 @@ export default function PrinterSettingsPage() {
     <div className="p-6 md:p-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-800">ตั้งค่าเครื่องพิมพ์ใบเสร็จ</h1>
+          <BranchSelector />
         </div>
 
         {/* Connection Status */}

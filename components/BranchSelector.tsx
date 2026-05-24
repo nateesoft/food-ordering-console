@@ -53,7 +53,6 @@ export default function BranchSelector() {
                 onClick={() => {
                   setSelectedBranch(branch);
                   setOpen(false);
-                  window.location.reload();
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-indigo-50 transition-colors ${
                   selectedBranch?.id === branch.id ? 'bg-indigo-50' : ''

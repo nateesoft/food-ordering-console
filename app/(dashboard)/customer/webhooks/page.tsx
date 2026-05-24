@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Webhook, Plus, Edit2, Trash2, RefreshCw, X, Play, Eye, CheckCircle, XCircle, Clock, Copy, Search } from 'lucide-react';
 import { api, WebhookEndpointResponse, WebhookDeliveryResponse, WebhookEventInfo, WebhookEvent } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import { useBranch } from '@/contexts/BranchContext';
 
 const EVENT_COLORS: Record<string, string> = {
   ORDER_CREATED: 'bg-blue-100 text-blue-800',
@@ -31,6 +32,7 @@ const EMPTY_FORM = {
 };
 
 export default function WebhooksPage() {
+  const { selectedBranch } = useBranch();
   const [activeTab, setActiveTab] = useState<TabType>('webhooks');
   const [webhooks, setWebhooks] = useState<WebhookEndpointResponse[]>([]);
   const [availableEvents, setAvailableEvents] = useState<WebhookEventInfo[]>([]);
@@ -72,7 +74,7 @@ export default function WebhooksPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranch?.id]);
 
   useEffect(() => {
     loadData();
