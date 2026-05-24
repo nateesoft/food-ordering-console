@@ -402,9 +402,9 @@ export const NestedMenuModal: React.FC<NestedMenuModalProps> = ({
                     <button
                       onClick={() => {
                         const selection = currentLevel === 0
-                          ? rootSelections.find(s => s.optionId === option.id)!
-                          : currentParent?.childSelections?.find(s => s.optionId === option.id)!;
-                        navigateToChild(option, selection);
+                          ? rootSelections.find(s => s.optionId === option.id)
+                          : currentParent?.childSelections?.find(s => s.optionId === option.id);
+                        if (selection) navigateToChild(option, selection);
                       }}
                       className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-purple-500 text-white p-2 rounded-full shadow-lg hover:bg-purple-600 transition-all"
                     >
