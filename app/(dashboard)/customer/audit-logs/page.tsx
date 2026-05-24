@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Search, X, ChevronLeft, ChevronRight, Filter, RotateCcw, Clock, ArrowLeft, Activity } from 'lucide-react';
+import { FileText, Search, X, ChevronLeft, ChevronRight, Filter, RotateCcw, Clock, Activity } from 'lucide-react';
 import { api, AuditLogEntry } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 
 type TabType = 'all' | 'timeline';
 
@@ -174,19 +175,9 @@ export default function AuditLogsPage() {
 
   return (
     <div className="bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-700 to-slate-700 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="w-8 h-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Audit Logs</h1>
-              <p className="text-gray-300">ติดตามประวัติการดำเนินการ ออเดอร์ และการชำระเงิน</p>
-            </div>
-          </div>
-          <BranchSelector />
-        </div>
-      </div>
+      <PageHeader icon={<FileText className="w-8 h-8" />} title="Audit Logs" subtitle="ติดตามประวัติการดำเนินการ ออเดอร์ และการชำระเงิน">
+        <BranchSelector />
+      </PageHeader>
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Stats Cards */}

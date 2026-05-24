@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Printer as PrinterIcon } from 'lucide-react';
 import type { ConnectionType } from '@/lib/printer/printer-service';
 import BranchSelector from '@/components/BranchSelector';
-import ConfirmModal from '@/components/ConfirmModal';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useBranch } from '@/contexts/BranchContext';
+import { useDialog } from '@/contexts/DialogContext';
 import { api } from '@/lib/api';
 import type { PrinterConfigItem } from '@/lib/api';
 
@@ -43,15 +45,13 @@ interface FormState extends Omit<PrinterConfigItem, 'id' | 'secret' | 'isActive'
 
 export default function PrinterSettingsPage() {
   const { selectedBranch } = useBranch();
+  const { confirm } = useDialog();
   const [printers, setPrinters] = useState<PrinterConfigItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   // Edit modal state
   const [editingId, setEditingId] = useState<string | null>(null); // null = closed, 'new' = add
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
-
-  // Delete confirm modal
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Copy feedback
   const [copied, setCopied] = useState<string | null>(null);
@@ -130,10 +130,14 @@ export default function PrinterSettingsPage() {
     closeModal();
   };
 
-  const handleDelete = async () => {
-    if (!deletingId) return;
-    await savePrinters(printers.filter((p) => p.id !== deletingId));
-    setDeletingId(null);
+  const handleDelete = async (printer: PrinterConfigItem) => {
+    const ok = await confirm({
+      title: `ลบเครื่องพิมพ์ "${printer.name}"?`,
+      description: 'เครื่องพิมพ์นี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบ',
+    });
+    if (!ok) return;
+    await savePrinters(printers.filter((p) => p.id !== printer.id));
   };
 
   const copyToClipboard = (text: string, key: string) => {
@@ -145,13 +149,12 @@ export default function PrinterSettingsPage() {
   const isModalOpen = editingId !== null;
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">ตั้งค่าเครื่องพิมพ์ใบเสร็จ</h1>
-          <BranchSelector />
-        </div>
+    <>
+      <PageHeader icon={<PrinterIcon className="w-8 h-8" />} title="ตั้งค่าเครื่องพิมพ์ใบเสร็จ" subtitle="จัดการการตั้งค่าเครื่องพิมพ์">
+        <BranchSelector />
+      </PageHeader>
+      <div className="p-6 md:p-8">
+        <div className="max-w-4xl mx-auto">
 
         {/* Feedback messages */}
         {saveMessage && (
@@ -231,7 +234,7 @@ export default function PrinterSettingsPage() {
                         แก้ไข
                       </button>
                       <button
-                        onClick={() => setDeletingId(printer.id)}
+                        onClick={() => handleDelete(printer)}
                         className="px-3 py-1.5 text-sm border border-red-100 rounded-lg hover:bg-red-50 text-red-600"
                       >
                         ลบ
@@ -304,14 +307,6 @@ export default function PrinterSettingsPage() {
         )}
       </div>
 
-      <ConfirmModal
-        open={deletingId !== null}
-        title="ลบเครื่องพิมพ์"
-        description="เครื่องพิมพ์นี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้"
-        confirmLabel="ลบ"
-        onConfirm={handleDelete}
-        onCancel={() => setDeletingId(null)}
-      />
 
       {/* Edit Modal */}
       {isModalOpen && (
@@ -468,5 +463,6 @@ export default function PrinterSettingsPage() {
         </div>
       )}
     </div>
+    </>
   );
 }

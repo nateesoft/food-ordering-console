@@ -16,6 +16,8 @@ import {
   Hash,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useDialog } from '@/contexts/DialogContext';
+import PageHeader from '@/components/dashboard/PageHeader';
 
 interface Branch {
   id: string;
@@ -46,8 +48,7 @@ export default function BranchManagementPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Delete confirmation
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { confirm } = useDialog();
 
   const loadBranches = async () => {
     try {
@@ -123,11 +124,15 @@ export default function BranchManagementPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleDelete = async (branch: Branch) => {
+    const ok = await confirm({
+      title: `ลบสาขา "${branch.name}"?`,
+      description: 'สาขานี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบ',
+    });
+    if (!ok) return;
     try {
-      await api.deleteBranch(deleteId);
-      setDeleteId(null);
+      await api.deleteBranch(branch.id);
       loadBranches();
     } catch (err) {
       console.error('Failed to delete branch:', err);
@@ -142,17 +147,7 @@ export default function BranchManagementPage() {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-4">
-            <div>
-              <h1 className="text-4xl font-bold">Branch Management</h1>
-              <p className="text-xl text-teal-100 mt-1">จัดการสาขา เพิ่ม/แก้ไข/ลบ</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Building2 className="w-8 h-8" />} title="Branch Management" subtitle="จัดการสาขา เพิ่ม/แก้ไข/ลบ" />
 
       {/* Content */}
       <div className="max-w-7xl mx-auto p-6">
@@ -165,7 +160,7 @@ export default function BranchManagementPage() {
               placeholder="ค้นหาสาขา..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:outline-none text-lg"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-gray-200 text-sm focus:border-teal-400 focus:outline-none"
             />
           </div>
           <button
@@ -250,7 +245,7 @@ export default function BranchManagementPage() {
                           <Edit2 className="w-5 h-5 text-blue-600" />
                         </button>
                         <button
-                          onClick={() => setDeleteId(branch.id)}
+                          onClick={() => handleDelete(branch)}
                           className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                           title="ลบ"
                         >
@@ -302,7 +297,7 @@ export default function BranchManagementPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-teal-400 focus:outline-none text-lg"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 text-sm focus:border-teal-400 focus:outline-none"
                   placeholder="เช่น สาขาสยาม"
                 />
               </div>
@@ -316,7 +311,7 @@ export default function BranchManagementPage() {
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-teal-400 focus:outline-none text-lg font-mono"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 text-sm focus:border-teal-400 focus:outline-none font-mono"
                   placeholder="เช่น SIAM"
                 />
               </div>
@@ -329,7 +324,7 @@ export default function BranchManagementPage() {
                 <textarea
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-teal-400 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 text-sm focus:border-teal-400 focus:outline-none"
                   rows={2}
                   placeholder="ที่อยู่สาขา"
                 />
@@ -344,7 +339,7 @@ export default function BranchManagementPage() {
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-teal-400 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 text-sm focus:border-teal-400 focus:outline-none"
                   placeholder="02-XXX-XXXX"
                 />
               </div>
@@ -392,30 +387,6 @@ export default function BranchManagementPage() {
         </div>
       )}
 
-      {/* Delete Confirmation */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">ยืนยันการลบ</h3>
-            <p className="text-gray-600 mb-6">คุณต้องการลบสาขานี้หรือไม่? การลบจะไม่สามารถย้อนกลับได้</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-bold text-lg hover:bg-gray-50"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-lg flex items-center justify-center gap-2"
-              >
-                <Trash2 className="w-5 h-5" />
-                ลบ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

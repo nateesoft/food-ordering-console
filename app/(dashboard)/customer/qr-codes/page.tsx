@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { QrCode, Download, Printer, Home, Settings, Loader2 } from 'lucide-react';
+import { QrCode, Download, Printer, Loader2 } from 'lucide-react';
+import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useRouter } from 'next/navigation';
 import { useBranch } from '@/contexts/BranchContext';
 import QRCodeLib from 'qrcode';
@@ -235,43 +237,25 @@ export default function QRCodesAdminPage() {
 
   return (
     <div className="bg-gradient-to-br from-orange-50 to-red-50">
-      {/* Header - Sticky */}
-      <div className="sticky top-0 z-50 bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {/* Mobile: Stack vertically */}
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500 rounded-lg">
-                <QrCode className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">จัดการ QR Code โต๊ะ</h1>
-                <p className="text-xs sm:text-sm text-gray-600">สร้างและจัดการ QR Code</p>
-              </div>
-            </div>
-
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <button
-              onClick={generateAllQRCodes}
-              disabled={!baseUrl || generatingTables.size > 0}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <QrCode className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>{generatingTables.size > 0 ? 'กำลังสร้าง...' : 'สร้างทั้งหมด'}</span>
-            </button>
-
-            <button
-              onClick={downloadAllQRCodes}
-              disabled={!baseUrl || Object.keys(qrCodes).length === 0}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>ดาวน์โหลดทั้งหมด</span>
-            </button>
-          </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<QrCode className="w-8 h-8" />} title="จัดการ QR Code โต๊ะ" subtitle="สร้างและจัดการ QR Code">
+        <BranchSelector />
+        <button
+          onClick={generateAllQRCodes}
+          disabled={!baseUrl || generatingTables.size > 0}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+        >
+          <QrCode className="w-4 h-4" />
+          {generatingTables.size > 0 ? 'กำลังสร้าง...' : 'สร้างทั้งหมด'}
+        </button>
+        <button
+          onClick={downloadAllQRCodes}
+          disabled={!baseUrl || Object.keys(qrCodes).length === 0}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          ดาวน์โหลดทั้งหมด
+        </button>
+      </PageHeader>
 
       {/* QR Codes Grid */}
       <div className="max-w-7xl mx-auto px-4 py-8">

@@ -392,6 +392,17 @@ export const api = {
 
   getMenuCategories: () => fetchApi<string[]>('/menu/categories'),
 
+  createMenuCategory: (name: string) =>
+    fetchApi<{ id: number; name: string }>('/menu/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteMenuCategory: (name: string) =>
+    fetchApi<void>(`/menu/categories/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    }),
+
   getMenuItem: (id: number) => fetchApi<ApiMenuItem>(`/menu/${id}`),
 
   createMenuItem: (data: {

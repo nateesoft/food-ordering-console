@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BarChart3, TrendingUp, ShoppingCart, UtensilsCrossed, Users,
-  ArrowLeft, Calendar, DollarSign, Home, RefreshCw,
+  BarChart3, ShoppingCart, UtensilsCrossed, Users,
+  Calendar, DollarSign, RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import {
@@ -12,6 +12,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 
 type TabType = 'revenue' | 'orders' | 'menu' | 'members';
 
@@ -106,26 +107,13 @@ export default function ReportsPage() {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <BarChart3 className="w-8 h-8" /> Reports & Analytics
-              </h1>
-              <p className="text-indigo-100 mt-1">รายงานและวิเคราะห์ข้อมูลร้านอาหาร</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <BranchSelector />
-            <button onClick={() => fetchData(true)} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              รีเฟรช
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<BarChart3 className="w-8 h-8" />} title="Reports & Analytics" subtitle="รายงานและวิเคราะห์ข้อมูลร้านอาหาร">
+        <BranchSelector />
+        <button onClick={() => fetchData(true)} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-50">
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          รีเฟรช
+        </button>
+      </PageHeader>
 
       <div className="max-w-7xl mx-auto p-6">
         {/* Date Range Picker */}

@@ -7,9 +7,12 @@ import { MenuItem, AddOn, SetComponent } from '@/types';
 import { api } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
+import { useDialog } from '@/contexts/DialogContext';
 
 export default function MenuManagementPage() {
   const { selectedBranch } = useBranch();
+  const { confirm, info } = useDialog();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [addOns, setAddOns] = useState<AddOn[]>([]);
@@ -24,6 +27,7 @@ export default function MenuManagementPage() {
   const [editingAddOn, setEditingAddOn] = useState<AddOn | null>(null);
   const [newCategory, setNewCategory] = useState('');
   const [activeTab, setActiveTab] = useState<'menu' | 'addons' | 'categories'>('menu');
+
 
   // Image upload state
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
@@ -83,12 +87,13 @@ export default function MenuManagementPage() {
   };
 
   const handleDeleteGalleryImage = async (filename: string) => {
-    if (!confirm('คุณแน่ใจหรือไม่ที่จะลบรูปภาพนี้?')) return;
+    const ok = await confirm({ title: 'ลบรูปภาพ?', description: 'รูปภาพนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้', confirmLabel: 'ลบ' });
+    if (!ok) return;
     try {
       await api.deleteUploadedImage(filename);
       setGalleryImages(prev => prev.filter(img => img.filename !== filename));
-    } catch (err) {
-      alert('ลบรูปภาพไม่สำเร็จ');
+    } catch (err: any) {
+      alert(err.message || 'ลบไม่สำเร็จ');
     }
   };
 
@@ -233,13 +238,14 @@ export default function MenuManagementPage() {
   };
 
   const handleDeleteItem = async (id: number, name: string) => {
-    if (!confirm(`ต้องการลบเมนู "${name}"?`)) return;
+    const ok = await confirm({ title: `ลบเมนู "${name}"?`, description: 'รายการนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้', confirmLabel: 'ลบ' });
+    if (!ok) return;
     try {
       await api.deleteMenuItem(id);
       setSuccessMsg(`ลบเมนู "${name}" สำเร็จ`);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'ลบเมนูไม่สำเร็จ');
+      alert(err.message || 'ลบไม่สำเร็จ');
     }
   };
 
@@ -290,37 +296,51 @@ export default function MenuManagementPage() {
   };
 
   const handleDeleteAddOn = async (id: number, name: string) => {
-    if (!confirm(`ต้องการลบ Add-on "${name}"?`)) return;
+    const ok = await confirm({ title: `ลบ Add-on "${name}"?`, description: 'รายการนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้', confirmLabel: 'ลบ' });
+    if (!ok) return;
     try {
       await api.deleteAddOn(id);
       setSuccessMsg(`ลบ Add-on "${name}" สำเร็จ`);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'ลบ Add-on ไม่สำเร็จ');
+      alert(err.message || 'ลบไม่สำเร็จ');
     }
   };
 
-  const handleAddCategory = () => {
-    if (!newCategory.trim()) {
-      alert('กรุณากรอกชื่อหมวดหมู่');
+  const handleAddCategory = async () => {
+    const trimmed = newCategory.trim();
+    if (!trimmed) {
+      await info({ title: 'กรุณากรอกชื่อหมวดหมู่' });
       return;
     }
-    if (categories.includes(newCategory.trim())) {
-      alert('หมวดหมู่นี้มีอยู่แล้ว');
+    if (categories.includes(trimmed)) {
+      await info({ title: 'หมวดหมู่นี้มีอยู่แล้ว' });
       return;
     }
-    setCategories(prev => [...prev, newCategory.trim()]);
-    setNewCategory('');
+    try {
+      await api.createMenuCategory(trimmed);
+      setCategories(prev => [...prev, trimmed]);
+      setNewCategory('');
+      setSuccessMsg(`เพิ่มหมวดหมู่ "${trimmed}" สำเร็จ`);
+    } catch (err: any) {
+      await info({ title: 'เพิ่มหมวดหมู่ไม่สำเร็จ', description: err.message });
+    }
   };
 
-  const handleDeleteCategory = (category: string) => {
+  const handleDeleteCategory = async (category: string) => {
     const itemsInCategory = menuItems.filter(item => item.category === category);
     if (itemsInCategory.length > 0) {
-      alert(`ไม่สามารถลบได้ เพราะมีเมนู ${itemsInCategory.length} รายการในหมวดหมู่นี้`);
+      await info({ title: 'ไม่สามารถลบได้', description: `มีเมนู ${itemsInCategory.length} รายการในหมวดหมู่นี้` });
       return;
     }
-    if (confirm(`คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่ "${category}"?`)) {
+    const ok = await confirm({ title: `ลบหมวดหมู่ "${category}"?`, description: 'หมวดหมู่นี้จะถูกลบออกจากระบบ', confirmLabel: 'ลบ' });
+    if (!ok) return;
+    try {
+      await api.deleteMenuCategory(category);
       setCategories(prev => prev.filter(c => c !== category));
+      setSuccessMsg(`ลบหมวดหมู่ "${category}" สำเร็จ`);
+    } catch (err: any) {
+      await info({ title: 'ลบหมวดหมู่ไม่สำเร็จ', description: err.message });
     }
   };
 
@@ -355,26 +375,10 @@ export default function MenuManagementPage() {
 
   return (
     <div className="bg-gradient-to-br from-orange-50 to-red-50">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500 rounded-lg">
-                <Settings className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">จัดการเมนูอาหาร</h1>
-                <p className="text-xs sm:text-sm text-gray-600">เพิ่ม แก้ไข ลบเมนูและ Add-ons</p>
-              </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <BranchSelector />
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Settings className="w-8 h-8" />} title="จัดการเมนูอาหาร" subtitle="เพิ่ม แก้ไข ลบเมนูและ Add-ons">
+        <BranchSelector />
+      </PageHeader>
 
       {/* No branch selected guard */}
       {!selectedBranch && (
@@ -559,7 +563,7 @@ export default function MenuManagementPage() {
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
                   placeholder="ชื่อหมวดหมู่"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <button
                   onClick={handleAddCategory}
@@ -608,7 +612,7 @@ export default function MenuManagementPage() {
               <X className="w-6 h-6" />
             </button>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
               {editingItem ? 'แก้ไขเมนู' : 'เพิ่มเมนูใหม่'}
             </h3>
 
@@ -620,7 +624,7 @@ export default function MenuManagementPage() {
                   type="text"
                   value={formData.code || ''}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="เช่น PT001"
                 />
               </div>
@@ -632,7 +636,7 @@ export default function MenuManagementPage() {
                   type="text"
                   value={formData.name || ''}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="เช่น ผัดไทย"
                 />
               </div>
@@ -643,7 +647,7 @@ export default function MenuManagementPage() {
                 <select
                   value={formData.category || ''}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -658,7 +662,7 @@ export default function MenuManagementPage() {
                   type="number"
                   value={formData.price || 0}
                   onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   min="0"
                 />
               </div>
@@ -765,7 +769,7 @@ export default function MenuManagementPage() {
                       type="text"
                       value={formData.image || ''}
                       onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                       placeholder="https://..."
                     />
                     <p className="mt-1 text-xs text-gray-400">วาง URL รูปภาพจากเว็บไซต์ภายนอก</p>
@@ -779,7 +783,7 @@ export default function MenuManagementPage() {
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
                   rows={3}
                   placeholder="อธิบายเมนูอาหาร"
                 />
@@ -791,7 +795,7 @@ export default function MenuManagementPage() {
                 <select
                   value={formData.type || 'single'}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as 'single' | 'set' | 'group' })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="single">เมนูเดี่ยว (Single)</option>
                   <option value="set">เซ็ตอาหาร (Set)</option>
@@ -913,7 +917,7 @@ export default function MenuManagementPage() {
               <X className="w-6 h-6" />
             </button>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
               {editingAddOn ? 'แก้ไข Add-on' : 'เพิ่ม Add-on ใหม่'}
             </h3>
 
@@ -924,7 +928,7 @@ export default function MenuManagementPage() {
                   type="text"
                   value={addOnFormData.name || ''}
                   onChange={(e) => setAddOnFormData({ ...addOnFormData, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="เช่น ไข่ดาว"
                 />
               </div>
@@ -935,7 +939,7 @@ export default function MenuManagementPage() {
                   type="number"
                   value={addOnFormData.price || 0}
                   onChange={(e) => setAddOnFormData({ ...addOnFormData, price: Number(e.target.value) })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   min="0"
                 />
               </div>
@@ -945,7 +949,7 @@ export default function MenuManagementPage() {
                 <select
                   value={addOnFormData.category || 'topping'}
                   onChange={(e) => setAddOnFormData({ ...addOnFormData, category: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="topping">Topping (ท็อปปิ้ง)</option>
                   <option value="side">Side (เครื่องเคียง)</option>

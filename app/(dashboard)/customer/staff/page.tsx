@@ -22,7 +22,9 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useBranch } from '@/contexts/BranchContext';
+import { useDialog } from '@/contexts/DialogContext';
 
 interface StaffUser {
   id: number;
@@ -63,8 +65,7 @@ export default function StaffManagementPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Delete confirmation
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const { confirm } = useDialog();
 
   // Load users
   const loadUsers = async () => {
@@ -193,10 +194,15 @@ export default function StaffManagementPage() {
   };
 
   // Delete user
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (user: StaffUser) => {
+    const ok = await confirm({
+      title: `ลบพนักงาน "${user.name}"?`,
+      description: 'พนักงานนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบ',
+    });
+    if (!ok) return;
     try {
-      await api.deleteUser(id);
-      setDeleteId(null);
+      await api.deleteUser(user.id);
       loadUsers();
     } catch (err) {
       console.error('Failed to delete user:', err);
@@ -212,25 +218,9 @@ export default function StaffManagementPage() {
 
   return (
     <div className="bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                  <Users className="w-8 h-8" />
-                  จัดการพนักงาน
-                </h1>
-                <p className="text-indigo-200 mt-1">
-                  Staff Management - เพิ่ม/แก้ไข/ลบ พนักงาน
-                </p>
-              </div>
-            </div>
-            <BranchSelector />
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Users className="w-8 h-8" />} title="จัดการพนักงาน" subtitle="Staff Management - เพิ่ม/แก้ไข/ลบ พนักงาน">
+        <BranchSelector />
+      </PageHeader>
 
       <div className="max-w-7xl mx-auto p-6">
         {/* No branch selected guard */}
@@ -424,7 +414,7 @@ export default function StaffManagementPage() {
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteId(user.id)}
+                            onClick={() => handleDelete(user)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="ลบ"
                           >
@@ -448,7 +438,7 @@ export default function StaffManagementPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-lg font-bold">
                 {editUser ? 'แก้ไขพนักงาน' : 'เพิ่มพนักงานใหม่'}
               </h2>
               <button
@@ -477,7 +467,7 @@ export default function StaffManagementPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="ชื่อพนักงาน"
                 />
               </div>
@@ -494,7 +484,7 @@ export default function StaffManagementPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, username: e.target.value })
                     }
-                    className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="username"
                   />
                 </div>
@@ -512,7 +502,7 @@ export default function StaffManagementPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="w-full border rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="********"
                   />
                   <button
@@ -652,38 +642,6 @@ export default function StaffManagementPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center">
-            <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-8 h-8 text-red-600" />
-            </div>
-            <h3 className="text-xl font-bold mb-2">ยืนยันการลบ</h3>
-            <p className="text-gray-600 mb-6">
-              ต้องการลบพนักงาน{' '}
-              <strong>
-                {users.find((u) => u.id === deleteId)?.name}
-              </strong>{' '}
-              หรือไม่?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => handleDelete(deleteId)}
-                className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700"
-              >
-                ลบ
-              </button>
-              <button
-                onClick={() => setDeleteId(null)}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200"
-              >
-                ยกเลิก
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

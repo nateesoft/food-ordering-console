@@ -4,14 +4,16 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Armchair, Plus, Edit, Trash2, Save, X, ArrowLeft, Search,
+  Armchair, Plus, Edit, Trash2, Save, X, Search,
   LayoutGrid, Map, RefreshCw, Users, Move, Copy, Check
 } from 'lucide-react';
 import { DndContext, useDraggable, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useBranch } from '@/contexts/BranchContext';
+import { useDialog } from '@/contexts/DialogContext';
 
 // ===== Types =====
 
@@ -140,6 +142,7 @@ function DraggableTable({ table }: { table: TableData }) {
 export default function TableManagementPage() {
   const router = useRouter();
   const { selectedBranch } = useBranch();
+  const { confirm } = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>('tables');
 
   // Tables state
@@ -159,8 +162,6 @@ export default function TableManagementPage() {
     positionX: 50, positionY: 50, zone: '',
   });
 
-  // Delete confirm
-  const [deleteConfirm, setDeleteConfirm] = useState<TableData | null>(null);
 
   // Zone management
   const [newZoneName, setNewZoneName] = useState('');
@@ -266,11 +267,16 @@ export default function TableManagementPage() {
   };
 
   const handleDeleteTable = async (table: TableData) => {
+    const ok = await confirm({
+      title: `ลบโต๊ะ ${table.number}?`,
+      description: 'โต๊ะนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบโต๊ะ',
+    });
+    if (!ok) return;
     try {
       setLoading(true);
       await api.deleteTable(table.id);
       setSuccessMsg(`ลบโต๊ะ ${table.number} สำเร็จ`);
-      setDeleteConfirm(null);
       loadTables();
     } catch (err: any) {
       alert(err.message || 'เกิดข้อผิดพลาด');
@@ -310,7 +316,12 @@ export default function TableManagementPage() {
   };
 
   const handleDeleteZone = async (zoneName: string) => {
-    if (!confirm(`ลบโซน "${zoneName}"? โต๊ะในโซนนี้จะถูกตั้งค่าเป็นไม่มีโซน`)) return;
+    const ok = await confirm({
+      title: `ลบโซน "${zoneName}"?`,
+      description: 'โต๊ะในโซนนี้จะถูกตั้งค่าเป็นไม่มีโซน',
+      confirmLabel: 'ลบโซน',
+    });
+    if (!ok) return;
     try {
       setLoading(true);
       const zoneTables = tables.filter(t => t.zone === zoneName);
@@ -436,21 +447,9 @@ export default function TableManagementPage() {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-sky-600 to-blue-600 text-white p-6 shadow-xl">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Armchair className="w-8 h-8" />
-              <div>
-                <h1 className="text-3xl font-bold">Table Management</h1>
-                <p className="text-sky-100">จัดการโต๊ะ แผนผังร้าน โซน</p>
-              </div>
-            </div>
-            <BranchSelector />
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Armchair className="w-8 h-8" />} title="Table Management" subtitle="จัดการโต๊ะ แผนผังร้าน โซน">
+        <BranchSelector />
+      </PageHeader>
 
       {/* No branch selected guard */}
       {!selectedBranch && (
@@ -523,7 +522,7 @@ export default function TableManagementPage() {
               <select
                 value={filterZone}
                 onChange={e => setFilterZone(e.target.value)}
-                className="px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
               >
                 <option value="">ทุกโซน</option>
                 {zones.map(z => <option key={z} value={z}>{z}</option>)}
@@ -531,7 +530,7 @@ export default function TableManagementPage() {
               <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
               >
                 <option value="">ทุกสถานะ</option>
                 {Object.entries(STATUS_CONFIG).map(([k, v]) => (
@@ -607,7 +606,7 @@ export default function TableManagementPage() {
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => setDeleteConfirm(table)}
+                                onClick={() => handleDeleteTable(table)}
                                 className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
                                 title="ลบ"
                               >
@@ -912,7 +911,7 @@ export default function TableManagementPage() {
                   <select
                     value={batchForm.size}
                     onChange={e => setBatchForm({ ...batchForm, size: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
                   >
                     {SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
@@ -922,7 +921,7 @@ export default function TableManagementPage() {
                   <select
                     value={batchForm.shape}
                     onChange={e => setBatchForm({ ...batchForm, shape: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
                   >
                     {SHAPES.map(s => <option key={s.value} value={s.value}>{s.icon} {s.label}</option>)}
                   </select>
@@ -1007,7 +1006,7 @@ export default function TableManagementPage() {
                   <select
                     value={tableForm.size}
                     onChange={e => setTableForm({ ...tableForm, size: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
                   >
                     {SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                   </select>
@@ -1017,7 +1016,7 @@ export default function TableManagementPage() {
                   <select
                     value={tableForm.shape}
                     onChange={e => setTableForm({ ...tableForm, shape: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 bg-white"
                   >
                     {SHAPES.map(s => <option key={s.value} value={s.value}>{s.icon} {s.label}</option>)}
                   </select>
@@ -1091,36 +1090,6 @@ export default function TableManagementPage() {
         </div>
       )}
 
-      {/* ========== Delete Confirmation Modal ========== */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-8 h-8 text-red-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">ยืนยันการลบ</h3>
-              <p className="text-gray-600 mb-6">
-                ต้องการลบโต๊ะ <span className="font-bold">{deleteConfirm.number}</span> ?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  onClick={() => handleDeleteTable(deleteConfirm)}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
-                >
-                  {loading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : 'ลบโต๊ะ'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </>}
     </div>
   );

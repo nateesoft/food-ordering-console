@@ -3,17 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Package, Plus, Edit, Trash2, Save, X, Home, AlertTriangle,
-  ArrowUpDown, History, ChefHat, TrendingDown, TrendingUp,
-  ArrowLeft, Search, Check
+  Package, Plus, Edit, Trash2, Save, X, AlertTriangle,
+  ArrowUpDown, History, ChefHat, TrendingDown, Search, Check
 } from 'lucide-react';
 import { api, ApiMenuItem } from '@/lib/api';
 import {
-  Ingredient, IngredientUnit, MenuItemIngredient, InventoryTransaction,
+  Ingredient, IngredientUnit, InventoryTransaction,
   TransactionType, MenuAvailability
 } from '@/types';
 import BranchSelector from '@/components/BranchSelector';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useBranch } from '@/contexts/BranchContext';
+import { useDialog } from '@/contexts/DialogContext';
 
 const UNITS: { value: IngredientUnit; label: string }[] = [
   { value: 'GRAM', label: 'กรัม (g)' },
@@ -40,6 +41,7 @@ const TRANSACTION_LABELS: Record<string, { label: string; color: string }> = {
 
 export default function InventoryManagementPage() {
   const { selectedBranch } = useBranch();
+  const { confirm } = useDialog();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes' | 'stock' | 'transactions'>('ingredients');
 
@@ -211,7 +213,8 @@ export default function InventoryManagementPage() {
   };
 
   const deleteIngredient = async (id: number) => {
-    if (!confirm('ต้องการลบวัตถุดิบนี้?')) return;
+    const ok = await confirm({ title: 'ลบวัตถุดิบ?', description: 'วัตถุดิบนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้', confirmLabel: 'ลบ' });
+    if (!ok) return;
     try {
       await api.deleteIngredient(id);
       showSuccess('ลบวัตถุดิบสำเร็จ');
@@ -259,7 +262,8 @@ export default function InventoryManagementPage() {
 
   const deleteRecipe = async () => {
     if (!selectedMenuItemId) return;
-    if (!confirm('ต้องการลบสูตรอาหารนี้?')) return;
+    const ok = await confirm({ title: 'ลบสูตรอาหาร?', description: 'สูตรอาหารนี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้', confirmLabel: 'ลบ' });
+    if (!ok) return;
     try {
       await api.deleteRecipe(selectedMenuItemId);
       setRecipeIngredients([]);
@@ -310,25 +314,9 @@ export default function InventoryManagementPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <Package className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">จัดการสต็อกวัตถุดิบ</h1>
-                <p className="text-emerald-100 text-sm">Inventory Management</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <BranchSelector />
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Package className="w-8 h-8" />} title="จัดการสต็อกวัตถุดิบ" subtitle="Inventory Management">
+        <BranchSelector />
+      </PageHeader>
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 pt-6">
@@ -627,7 +615,7 @@ export default function InventoryManagementPage() {
                 <select
                   value={adjustForm.ingredientId}
                   onChange={(e) => setAdjustForm({ ...adjustForm, ingredientId: Number(e.target.value) })}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value={0}>-- เลือกวัตถุดิบ --</option>
                   {ingredients.filter((i) => i.isActive).map((ing) => (
@@ -641,12 +629,12 @@ export default function InventoryManagementPage() {
                   placeholder="จำนวน"
                   value={adjustForm.quantity || ''}
                   onChange={(e) => setAdjustForm({ ...adjustForm, quantity: Number(e.target.value) })}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <select
                   value={adjustForm.type}
                   onChange={(e) => setAdjustForm({ ...adjustForm, type: e.target.value as any })}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="STOCK_IN">เพิ่มสต็อก (STOCK_IN)</option>
                   <option value="STOCK_OUT">ลดสต็อก (STOCK_OUT)</option>
@@ -657,7 +645,7 @@ export default function InventoryManagementPage() {
                   placeholder="หมายเหตุ (ไม่บังคับ)"
                   value={adjustForm.notes}
                   onChange={(e) => setAdjustForm({ ...adjustForm, notes: e.target.value })}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               <button
@@ -823,7 +811,7 @@ export default function InventoryManagementPage() {
                   type="text"
                   value={ingredientForm.name}
                   onChange={(e) => setIngredientForm({ ...ingredientForm, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="เช่น ข้าวสาร, น้ำมัน, ไข่ไก่"
                 />
               </div>
@@ -833,7 +821,7 @@ export default function InventoryManagementPage() {
                 <select
                   value={ingredientForm.unit}
                   onChange={(e) => setIngredientForm({ ...ingredientForm, unit: e.target.value as IngredientUnit })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   {UNITS.map((u) => (
                     <option key={u.value} value={u.value}>{u.label}</option>
@@ -848,7 +836,7 @@ export default function InventoryManagementPage() {
                     type="number"
                     value={ingredientForm.currentStock}
                     onChange={(e) => setIngredientForm({ ...ingredientForm, currentStock: Number(e.target.value) })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
@@ -857,7 +845,7 @@ export default function InventoryManagementPage() {
                     type="number"
                     value={ingredientForm.minStock}
                     onChange={(e) => setIngredientForm({ ...ingredientForm, minStock: Number(e.target.value) })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
@@ -868,7 +856,7 @@ export default function InventoryManagementPage() {
                   type="number"
                   value={ingredientForm.costPerUnit}
                   onChange={(e) => setIngredientForm({ ...ingredientForm, costPerUnit: Number(e.target.value) })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 

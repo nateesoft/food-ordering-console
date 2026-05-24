@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Webhook, Plus, Edit2, Trash2, RefreshCw, X, Play, Eye, CheckCircle, XCircle, Clock, Copy, Search } from 'lucide-react';
+import { Webhook, Plus, Edit2, Trash2, RefreshCw, X, Play, Eye, CheckCircle, XCircle, Clock, Copy } from 'lucide-react';
 import { api, WebhookEndpointResponse, WebhookDeliveryResponse, WebhookEventInfo, WebhookEvent } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
-import ConfirmModal from '@/components/ConfirmModal';
+import PageHeader from '@/components/dashboard/PageHeader';
 import { useBranch } from '@/contexts/BranchContext';
+import { useDialog } from '@/contexts/DialogContext';
 
 const EVENT_COLORS: Record<string, string> = {
   ORDER_CREATED: 'bg-blue-100 text-blue-800',
@@ -34,6 +35,7 @@ const EMPTY_FORM = {
 
 export default function WebhooksPage() {
   const { selectedBranch } = useBranch();
+  const { confirm } = useDialog();
   const [activeTab, setActiveTab] = useState<TabType>('webhooks');
   const [webhooks, setWebhooks] = useState<WebhookEndpointResponse[]>([]);
   const [availableEvents, setAvailableEvents] = useState<WebhookEventInfo[]>([]);
@@ -61,8 +63,6 @@ export default function WebhooksPage() {
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
   const [showSecretModal, setShowSecretModal] = useState(false);
 
-  // Delete confirm
-  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -149,11 +149,15 @@ export default function WebhooksPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deletingId) return;
+  const handleDelete = async (webhook: WebhookEndpointResponse) => {
+    const ok = await confirm({
+      title: `ลบ Webhook "${webhook.name}"?`,
+      description: 'Webhook นี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้',
+      confirmLabel: 'ลบ',
+    });
+    if (!ok) return;
     try {
-      await api.deleteWebhook(deletingId);
-      setDeletingId(null);
+      await api.deleteWebhook(webhook.id);
       loadData();
     } catch (err) {
       console.error('Failed to delete webhook:', err);
@@ -216,21 +220,12 @@ export default function WebhooksPage() {
 
   return (
     <div className="bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Webhook className="w-6 h-6 text-indigo-600" />
-            <h1 className="text-xl font-bold text-gray-800">Webhooks</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <BranchSelector />
-            <button onClick={loadData} className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
-              <RefreshCw className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<Webhook className="w-8 h-8" />} title="Webhooks" subtitle="จัดการ Webhook Endpoints และ Event Delivery">
+        <BranchSelector />
+        <button onClick={loadData} className="p-2 text-white/80 hover:text-white rounded-lg hover:bg-white/20">
+          <RefreshCw className="w-5 h-5" />
+        </button>
+      </PageHeader>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Tabs */}
@@ -342,7 +337,7 @@ export default function WebhooksPage() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => setDeletingId(webhook.id)}
+                          onClick={() => handleDelete(webhook)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                           title="ลบ"
                         >
@@ -388,14 +383,6 @@ export default function WebhooksPage() {
         )}
       </div>
 
-      <ConfirmModal
-        open={deletingId !== null}
-        title="ลบ Webhook"
-        description="Webhook นี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้"
-        confirmLabel="ลบ"
-        onConfirm={handleDelete}
-        onCancel={() => setDeletingId(null)}
-      />
 
       {/* Create/Edit Modal */}
       {showFormModal && (
@@ -418,7 +405,7 @@ export default function WebhooksPage() {
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="เช่น Kitchen Display System"
                 />
               </div>
@@ -429,7 +416,7 @@ export default function WebhooksPage() {
                   type="url"
                   value={form.url}
                   onChange={(e) => setForm({ ...form, url: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
                   placeholder="https://example.com/webhook"
                 />
               </div>
@@ -464,7 +451,7 @@ export default function WebhooksPage() {
                   type="text"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="เช่น ส่งข้อมูลออร์เดอร์ไปยัง KDS"
                 />
               </div>
@@ -474,7 +461,7 @@ export default function WebhooksPage() {
                 <textarea
                   value={form.headers}
                   onChange={(e) => setForm({ ...form, headers: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
                   rows={3}
                   placeholder='{"Authorization": "Bearer token123"}'
                 />

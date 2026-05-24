@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Building2, Save, ArrowLeft, Globe, Phone, Mail, MapPin, FileText, Briefcase } from 'lucide-react';
+import { Building2, Save, Globe, Phone, Mail, MapPin, FileText, Briefcase } from 'lucide-react';
 import { apiPath } from '@/lib/api-path';
+import PageHeader from '@/components/dashboard/PageHeader';
 
 interface CompanyData {
   id?: number;
@@ -117,20 +117,10 @@ export default function CompanySettingsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800">ข้อมูลบริษัท</h1>
-              <p className="text-sm text-gray-500">จัดการข้อมูลบริษัทของคุณ</p>
-            </div>
-          </div>
-        </div>
+    <>
+      <PageHeader icon={<Building2 className="w-8 h-8" />} title="ข้อมูลบริษัท" subtitle="จัดการข้อมูลบริษัทของคุณ" />
+      <div className="p-6 md:p-8">
+        <div className="max-w-3xl mx-auto">
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
           {/* Basic Info */}
@@ -304,5 +294,6 @@ export default function CompanySettingsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
