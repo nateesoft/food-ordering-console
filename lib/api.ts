@@ -378,8 +378,62 @@ export const api = {
 
   getMenuItem: (id: number) => fetchApi<ApiMenuItem>(`/menu/${id}`),
 
+  createMenuItem: (data: {
+    code: string;
+    name: string;
+    category: string;
+    price: number;
+    image?: string;
+    description?: string;
+    type?: string;
+    isActive?: boolean;
+    setComponents?: { name: string; description?: string; quantity?: number }[];
+    addOnIds?: number[];
+    addOnGroupIds?: number[];
+  }) =>
+    fetchApi<ApiMenuItem>('/menu', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateMenuItem: (id: number, data: {
+    code?: string;
+    name?: string;
+    category?: string;
+    price?: number;
+    image?: string;
+    description?: string;
+    type?: string;
+    isActive?: boolean;
+    setComponents?: { name: string; description?: string; quantity?: number }[];
+    addOnIds?: number[];
+    addOnGroupIds?: number[];
+  }) =>
+    fetchApi<ApiMenuItem>(`/menu/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteMenuItem: (id: number) =>
+    fetchApi<ApiMenuItem>(`/menu/${id}`, { method: 'DELETE' }),
+
   // AddOns
   getAddOns: () => fetchApi<ApiAddOn[]>('/addons'),
+
+  createAddOn: (data: { name: string; price: number; category: string; isActive?: boolean }) =>
+    fetchApi<ApiAddOn>('/addons', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateAddOn: (id: number, data: { name?: string; price?: number; category?: string; isActive?: boolean }) =>
+    fetchApi<ApiAddOn>(`/addons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteAddOn: (id: number) =>
+    fetchApi<ApiAddOn>(`/addons/${id}`, { method: 'DELETE' }),
 
   getAddOnGroups: () => fetchApi<ApiAddOnGroup[]>('/addon-groups'),
 

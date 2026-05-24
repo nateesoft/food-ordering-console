@@ -1,24 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useBranch } from '@/contexts/BranchContext';
-import { Plus, Edit, Trash2, Home, Settings, X, Save, Upload, Image as ImageIcon, Link, FolderOpen, Search, RefreshCw, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Settings, X, Save, Upload, Image as ImageIcon, Link, FolderOpen, Search, RefreshCw, CheckCircle } from 'lucide-react';
 import { MenuItem, AddOn, SetComponent } from '@/types';
-import { menuItems as initialMenuItems } from '@/data/menuItems';
-import { addOns as initialAddOns } from '@/data/addOns';
 import { api } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import BranchSelector from '@/components/BranchSelector';
 
 export default function MenuManagementPage() {
-  const router = useRouter();
   const { selectedBranch } = useBranch();
-  const branchId = selectedBranch?.id?.toString() ?? '1';
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [addOns, setAddOns] = useState<AddOn[]>(initialAddOns);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [addOns, setAddOns] = useState<AddOn[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddOnModal, setShowAddOnModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -103,8 +101,15 @@ export default function MenuManagementPage() {
     img.filename.toLowerCase().includes(gallerySearch.toLowerCase())
   );
 
-  useEffect(() => {
-    api.getMenuItems().then(items => {
+  const loadData = useCallback(async () => {
+    if (!selectedBranch) return;
+    setLoading(true);
+    try {
+      const [items, cats, addOnsData] = await Promise.all([
+        api.getMenuItems(),
+        api.getMenuCategories(),
+        api.getAddOns(),
+      ]);
       setMenuItems(items.map(item => ({
         id: item.id,
         code: item.code,
@@ -122,14 +127,25 @@ export default function MenuManagementPage() {
         availableAddOnGroups: item.availableAddOnGroups.map((a: any) => a.addOnGroupId ?? a),
         nestedMenuConfig: item.nestedMenuConfig ?? undefined,
       })) as MenuItem[]);
-    }).catch(err => console.error('Failed to load menu items:', err));
-  }, []);
+      setCategories(cats);
+      setAddOns(addOnsData as any[]);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedBranch]);
 
   useEffect(() => {
-    // Extract unique categories from menu items
-    const uniqueCategories = Array.from(new Set(menuItems.map(item => item.category)));
-    setCategories(uniqueCategories);
-  }, [menuItems]);
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (successMsg) {
+      const t = setTimeout(() => setSuccessMsg(''), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [successMsg]);
 
   // Menu Item Form State
   const [formData, setFormData] = useState<Partial<MenuItem>>({
@@ -175,28 +191,55 @@ export default function MenuManagementPage() {
     setShowEditModal(true);
   };
 
-  const handleSaveItem = () => {
+  const handleSaveItem = async () => {
     if (!formData.name || !formData.category) {
       alert('กรุณากรอกชื่อเมนูและหมวดหมู่');
       return;
     }
-
-    if (editingItem) {
-      // Update existing item
-      setMenuItems(prev => prev.map(item =>
-        item.id === editingItem.id ? { ...formData, id: item.id } as MenuItem : item
-      ));
-    } else {
-      // Create new item
-      const newId = Math.max(...menuItems.map(i => i.id), 0) + 1;
-      setMenuItems(prev => [...prev, { ...formData, id: newId } as MenuItem]);
+    if (!formData.code) {
+      alert('กรุณากรอกรหัสเมนู (Code)');
+      return;
     }
-    setShowEditModal(false);
+
+    setSaving(true);
+    try {
+      const payload = {
+        code: formData.code!,
+        name: formData.name!,
+        category: formData.category!,
+        price: formData.price ?? 0,
+        image: formData.image || undefined,
+        description: formData.description || undefined,
+        type: (formData.type ?? 'single').toUpperCase(),
+        isActive: formData.isActive ?? true,
+        setComponents: formData.setComponents?.map(c => ({ name: c.name, description: c.description, quantity: c.quantity })),
+        addOnIds: formData.availableAddOns as number[] | undefined,
+      };
+
+      if (editingItem) {
+        await api.updateMenuItem(editingItem.id, payload);
+        setSuccessMsg(`อัพเดทเมนู "${formData.name}" สำเร็จ`);
+      } else {
+        await api.createMenuItem(payload);
+        setSuccessMsg(`เพิ่มเมนู "${formData.name}" สำเร็จ`);
+      }
+      setShowEditModal(false);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'เกิดข้อผิดพลาด');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteItem = (id: number) => {
-    if (confirm('คุณแน่ใจหรือไม่ที่จะลบเมนูนี้?')) {
-      setMenuItems(prev => prev.filter(item => item.id !== id));
+  const handleDeleteItem = async (id: number, name: string) => {
+    if (!confirm(`ต้องการลบเมนู "${name}"?`)) return;
+    try {
+      await api.deleteMenuItem(id);
+      setSuccessMsg(`ลบเมนู "${name}" สำเร็จ`);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'ลบเมนูไม่สำเร็จ');
     }
   };
 
@@ -216,26 +259,44 @@ export default function MenuManagementPage() {
     setShowAddOnModal(true);
   };
 
-  const handleSaveAddOn = () => {
+  const handleSaveAddOn = async () => {
     if (!addOnFormData.name) {
       alert('กรุณากรอกชื่อ Add-on');
       return;
     }
 
-    if (editingAddOn) {
-      setAddOns(prev => prev.map(item =>
-        item.id === editingAddOn.id ? { ...addOnFormData, id: item.id } as AddOn : item
-      ));
-    } else {
-      const newId = Math.max(...addOns.map(i => i.id), 0) + 1;
-      setAddOns(prev => [...prev, { ...addOnFormData, id: newId } as AddOn]);
+    setSaving(true);
+    try {
+      const payload = {
+        name: addOnFormData.name!,
+        price: addOnFormData.price ?? 0,
+        category: addOnFormData.category || 'topping',
+      };
+
+      if (editingAddOn) {
+        await api.updateAddOn(editingAddOn.id, payload);
+        setSuccessMsg(`อัพเดท Add-on "${addOnFormData.name}" สำเร็จ`);
+      } else {
+        await api.createAddOn(payload);
+        setSuccessMsg(`เพิ่ม Add-on "${addOnFormData.name}" สำเร็จ`);
+      }
+      setShowAddOnModal(false);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'เกิดข้อผิดพลาด');
+    } finally {
+      setSaving(false);
     }
-    setShowAddOnModal(false);
   };
 
-  const handleDeleteAddOn = (id: number) => {
-    if (confirm('คุณแน่ใจหรือไม่ที่จะลบ Add-on นี้?')) {
-      setAddOns(prev => prev.filter(item => item.id !== id));
+  const handleDeleteAddOn = async (id: number, name: string) => {
+    if (!confirm(`ต้องการลบ Add-on "${name}"?`)) return;
+    try {
+      await api.deleteAddOn(id);
+      setSuccessMsg(`ลบ Add-on "${name}" สำเร็จ`);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'ลบ Add-on ไม่สำเร็จ');
     }
   };
 
@@ -314,6 +375,28 @@ export default function MenuManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* No branch selected guard */}
+      {!selectedBranch && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="bg-orange-100 w-24 h-24 rounded-full flex items-center justify-center mb-6">
+            <Settings className="w-12 h-12 text-orange-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">กรุณาเลือกสาขาก่อน</h2>
+          <p className="text-gray-500 max-w-sm">เลือกสาขาที่ต้องการจัดการเมนูจากเมนูด้านบน</p>
+        </div>
+      )}
+
+      {selectedBranch && <>
+      {/* Success message */}
+      {successMsg && (
+        <div className="max-w-7xl mx-auto px-4 mt-4">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+            <span className="text-green-800">{successMsg}</span>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -405,7 +488,7 @@ export default function MenuManagementPage() {
                         แก้ไข
                       </button>
                       <button
-                        onClick={() => handleDeleteItem(item.id)}
+                        onClick={() => handleDeleteItem(item.id, item.name)}
                         className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all text-sm"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -452,7 +535,7 @@ export default function MenuManagementPage() {
                       แก้ไข
                     </button>
                     <button
-                      onClick={() => handleDeleteAddOn(addOn.id)}
+                      onClick={() => handleDeleteAddOn(addOn.id, addOn.name)}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all text-sm"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1031,6 +1114,7 @@ export default function MenuManagementPage() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }
