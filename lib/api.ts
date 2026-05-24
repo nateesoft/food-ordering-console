@@ -13,6 +13,22 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+export interface PrinterConfigItem {
+  id: string;
+  name: string;
+  secret: string;
+  connectionType: 'serial' | 'usb';
+  serialConfig?: { baudRate: number };
+  paperWidth: number;
+  shopName: string;
+  shopAddress: string;
+  shopPhone: string;
+  shopTaxId: string;
+  footerText: string;
+  isActive: boolean;
+  lastSeen: string | null;
+}
+
 export interface ApiNestedMenuOption {
   id: number;
   name: string;
@@ -468,6 +484,26 @@ export const api = {
   callQueue: (id: number) =>
     fetchApi<QueueTicketResponse>(`/queue/${id}/call`, {
       method: 'POST',
+    }),
+
+  // Settings (SystemSetting per branch)
+  getSetting: (key: string) =>
+    fetchApi<{ key: string; value: any }>(`/settings/${key}`),
+
+  upsertSetting: (key: string, value: any) =>
+    fetchApi<any>(`/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    }),
+
+  // Printer configs (multi-printer list stored as a settings array)
+  getPrinterConfigs: () =>
+    fetchApi<{ key: string; value: PrinterConfigItem[] | null }>('/settings/printer_configs'),
+
+  savePrinterConfigs: (printers: PrinterConfigItem[]) =>
+    fetchApi<any>('/settings/printer_configs', {
+      method: 'PUT',
+      body: JSON.stringify({ value: printers }),
     }),
 
   // Members

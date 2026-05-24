@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Webhook, Plus, Edit2, Trash2, RefreshCw, X, Play, Eye, CheckCircle, XCircle, Clock, Copy, Search } from 'lucide-react';
 import { api, WebhookEndpointResponse, WebhookDeliveryResponse, WebhookEventInfo, WebhookEvent } from '@/lib/api';
 import BranchSelector from '@/components/BranchSelector';
+import ConfirmModal from '@/components/ConfirmModal';
 import { useBranch } from '@/contexts/BranchContext';
 
 const EVENT_COLORS: Record<string, string> = {
@@ -59,6 +60,9 @@ export default function WebhooksPage() {
   // Secret display
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
   const [showSecretModal, setShowSecretModal] = useState(false);
+
+  // Delete confirm
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -145,10 +149,11 @@ export default function WebhooksPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('ต้องการลบ Webhook นี้?')) return;
+  const handleDelete = async () => {
+    if (!deletingId) return;
     try {
-      await api.deleteWebhook(id);
+      await api.deleteWebhook(deletingId);
+      setDeletingId(null);
       loadData();
     } catch (err) {
       console.error('Failed to delete webhook:', err);
@@ -337,7 +342,7 @@ export default function WebhooksPage() {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(webhook.id)}
+                          onClick={() => setDeletingId(webhook.id)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                           title="ลบ"
                         >
@@ -382,6 +387,15 @@ export default function WebhooksPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={deletingId !== null}
+        title="ลบ Webhook"
+        description="Webhook นี้จะถูกลบออกจากระบบ ไม่สามารถกู้คืนได้"
+        confirmLabel="ลบ"
+        onConfirm={handleDelete}
+        onCancel={() => setDeletingId(null)}
+      />
 
       {/* Create/Edit Modal */}
       {showFormModal && (
