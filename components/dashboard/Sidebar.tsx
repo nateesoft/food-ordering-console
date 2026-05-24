@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   UtensilsCrossed, ChevronLeft, ChevronRight, ChevronDown,
-  QrCode, Menu, BarChart3, Users, Package, Building2,
+  Menu, BarChart3, Users, Package, Building2,
   Webhook, Armchair, FileText, BadgeInfo, LogOut, User,
   Printer, LayoutDashboard, ShieldCheck, Settings,
 } from 'lucide-react';
@@ -40,7 +40,6 @@ const CUSTOMER_GROUPS: NavGroup[] = [
       { label: 'จัดการสาขา', href: '/customer/branches', icon: Building2 },
       { label: 'จัดการพนักงาน', href: '/customer/staff', icon: Users },
       { label: 'จัดการโต๊ะ', href: '/customer/tables', icon: Armchair },
-      { label: 'พิมพ์ QR Code', href: '/customer/qr-codes', icon: QrCode },
       { label: 'เมนูอาหาร', href: '/customer/menu-management', icon: Menu },
       { label: 'คลังวัตถุดิบ', href: '/customer/inventory', icon: Package },
     ],

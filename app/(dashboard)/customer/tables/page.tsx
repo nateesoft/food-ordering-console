@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Armchair, Plus, Edit, Trash2, Save, X, ArrowLeft, Search,
   LayoutGrid, Map, RefreshCw, Users, Move, Copy, Check
@@ -438,19 +439,39 @@ export default function TableManagementPage() {
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-600 to-blue-600 text-white p-6 shadow-xl">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <BranchSelector />
-          </div>
-          <div className="flex items-center gap-3">
-            <Armchair className="w-8 h-8" />
-            <div>
-              <h1 className="text-3xl font-bold">Table Management</h1>
-              <p className="text-sky-100">จัดการโต๊ะ แผนผังร้าน โซน</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Armchair className="w-8 h-8" />
+              <div>
+                <h1 className="text-3xl font-bold">Table Management</h1>
+                <p className="text-sky-100">จัดการโต๊ะ แผนผังร้าน โซน</p>
+              </div>
             </div>
+            <BranchSelector />
           </div>
         </div>
       </div>
 
+      {/* No branch selected guard */}
+      {!selectedBranch && (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="bg-sky-100 w-24 h-24 rounded-full flex items-center justify-center mb-6">
+            <Armchair className="w-12 h-12 text-sky-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">กรุณาเลือกสาขาก่อน</h2>
+          <p className="text-gray-500 mb-6 max-w-sm">
+            เลือกสาขาที่ต้องการจัดการโต๊ะจากเมนูด้านบน หรือสร้างสาขาใหม่ก่อน
+          </p>
+          <Link
+            href="/customer/branches"
+            className="bg-sky-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-sky-700 transition-colors"
+          >
+            ไปที่หน้าจัดการสาขา
+          </Link>
+        </div>
+      )}
+
+      {selectedBranch && <>
       {/* Success Message */}
       {successMsg && (
         <div className="max-w-7xl mx-auto px-6 mt-4">
@@ -1100,6 +1121,7 @@ export default function TableManagementPage() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

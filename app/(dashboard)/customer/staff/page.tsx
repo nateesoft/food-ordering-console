@@ -14,10 +14,10 @@ import {
   Eye,
   EyeOff,
   Key,
-  ArrowLeft,
   Search,
   ToggleLeft,
   ToggleRight,
+  Building2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -169,6 +169,7 @@ export default function StaffManagementPage() {
           password: formData.password,
           name: formData.name,
           role: formData.role,
+          branchId: selectedBranch?.id,
         });
       }
 
@@ -232,6 +233,27 @@ export default function StaffManagementPage() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
+        {/* No branch selected guard */}
+        {!selectedBranch && (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="bg-indigo-100 w-24 h-24 rounded-full flex items-center justify-center mb-6">
+              <Building2 className="w-12 h-12 text-indigo-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">กรุณาเลือกสาขาก่อน</h2>
+            <p className="text-gray-500 mb-6 max-w-sm">
+              เลือกสาขาที่ต้องการจัดการพนักงานจากเมนูด้านบน หรือสร้างสาขาใหม่ก่อน
+            </p>
+            <Link
+              href="/customer/branches"
+              className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              ไปที่หน้าจัดการสาขา
+            </Link>
+          </div>
+        )}
+
+        {selectedBranch && (
+        <>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -416,6 +438,8 @@ export default function StaffManagementPage() {
               </tbody>
             </table>
           </div>
+        )}
+        </>
         )}
       </div>
 

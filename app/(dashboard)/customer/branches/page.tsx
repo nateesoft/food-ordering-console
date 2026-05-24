@@ -8,7 +8,6 @@ import {
   Trash2,
   X,
   Save,
-  ArrowLeft,
   Search,
   ToggleLeft,
   ToggleRight,
@@ -16,11 +15,10 @@ import {
   Phone,
   Hash,
 } from 'lucide-react';
-import Link from 'next/link';
 import { api } from '@/lib/api';
 
 interface Branch {
-  id: number;
+  id: string;
   name: string;
   code: string;
   address: string | null;
@@ -49,7 +47,7 @@ export default function BranchManagementPage() {
   const [formError, setFormError] = useState('');
 
   // Delete confirmation
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const loadBranches = async () => {
     try {

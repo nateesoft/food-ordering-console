@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface Branch {
-  id: number;
+  id: string;
   name: string;
   code: string;
   address: string | null;
@@ -48,13 +48,13 @@ export function BranchProvider({ children }: { children: ReactNode }) {
 
         // Restore saved branch from localStorage
         const savedId = localStorage.getItem('selectedBranchId');
-        const savedBranch = savedId ? data.find(b => b.id === parseInt(savedId)) : null;
+        const savedBranch = savedId ? data.find(b => b.id === savedId) : null;
 
         if (savedBranch) {
           setSelectedBranchState(savedBranch);
         } else if (data.length > 0) {
           setSelectedBranchState(data[0]);
-          localStorage.setItem('selectedBranchId', String(data[0].id));
+          localStorage.setItem('selectedBranchId', data[0].id);
         }
       }
     } catch (err) {
@@ -70,7 +70,7 @@ export function BranchProvider({ children }: { children: ReactNode }) {
 
   const setSelectedBranch = (branch: Branch) => {
     setSelectedBranchState(branch);
-    localStorage.setItem('selectedBranchId', String(branch.id));
+    localStorage.setItem('selectedBranchId', branch.id);
   };
 
   return (

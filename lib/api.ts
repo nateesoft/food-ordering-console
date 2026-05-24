@@ -526,7 +526,7 @@ export const api = {
 
   getUser: (id: number) => fetchApi<any>(`/auth/users/${id}`),
 
-  createUser: (data: { username: string; password: string; name: string; role?: string }) =>
+  createUser: (data: { username: string; password: string; name: string; role?: string; branchId?: string }) =>
     fetchApi<any>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -680,7 +680,7 @@ export const api = {
   // ===== Branches =====
   getBranches: () => fetchApi<any[]>('/branches'),
 
-  getBranch: (id: number) => fetchApi<any>(`/branches/${id}`),
+  getBranch: (id: string) => fetchApi<any>(`/branches/${id}`),
 
   createBranch: (data: { name: string; code: string; address?: string; phone?: string }) =>
     fetchApi<any>('/branches', {
@@ -688,13 +688,13 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  updateBranch: (id: number, data: { name?: string; code?: string; address?: string; phone?: string; isActive?: boolean }) =>
+  updateBranch: (id: string, data: { name?: string; code?: string; address?: string; phone?: string; isActive?: boolean }) =>
     fetchApi<any>(`/branches/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  deleteBranch: (id: number) =>
+  deleteBranch: (id: string) =>
     fetchApi<any>(`/branches/${id}`, {
       method: 'DELETE',
     }),
