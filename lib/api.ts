@@ -971,6 +971,12 @@ export const api = {
       method: 'DELETE',
     }),
 
+  generateTableQrCode: (branchId: string, tableNumber: string) =>
+    fetchApi<{ url: string; sessionId: string; qrCode: string }>('/tables/generate-qr', {
+      method: 'POST',
+      body: JSON.stringify({ branchId, tableNumber }),
+    }),
+
   getTable: (id: number) => fetchApi<any>(`/tables/${id}`),
 
   getTableByNumber: (number: string) => fetchApi<any>(`/tables/number/${number}`),

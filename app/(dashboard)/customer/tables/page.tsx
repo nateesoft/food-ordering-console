@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Armchair, Plus, Edit, Trash2, Save, X, Search,
-  LayoutGrid, Map, RefreshCw, Users, Move, Copy, Check
+  LayoutGrid, Map, RefreshCw, Users, Move, Copy, Check, QrCode, Printer
 } from 'lucide-react';
 import { DndContext, useDraggable, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -163,6 +163,10 @@ export default function TableManagementPage() {
   });
 
 
+  // QR Code modal
+  const [qrModal, setQrModal] = useState<{ tableNumber: string; url: string; qrCode: string } | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
   // Zone management
   const [newZoneName, setNewZoneName] = useState('');
   const [renameZone, setRenameZone] = useState<{ old: string; new: string } | null>(null);
@@ -282,6 +286,19 @@ export default function TableManagementPage() {
       alert(err.message || 'เกิดข้อผิดพลาด');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateQr = async (table: TableData) => {
+    if (!selectedBranch?.id) return;
+    setQrLoading(true);
+    try {
+      const result = await api.generateTableQrCode(String(selectedBranch.id), table.number);
+      setQrModal({ tableNumber: table.number, url: result.url, qrCode: result.qrCode });
+    } catch (err: any) {
+      alert(err.message || 'ไม่สามารถสร้าง QR Code ได้');
+    } finally {
+      setQrLoading(false);
     }
   };
 
@@ -598,6 +615,14 @@ export default function TableManagementPage() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleGenerateQr(table)}
+                                className="p-2 hover:bg-green-50 rounded-lg transition-colors text-green-600"
+                                title="สร้าง QR Code"
+                                disabled={qrLoading}
+                              >
+                                <QrCode className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => openEditModal(table)}
                                 className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
@@ -1084,6 +1109,65 @@ export default function TableManagementPage() {
                 className="flex-1 py-2.5 bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 transition-colors font-medium"
               >
                 {loading ? <RefreshCw className="w-5 h-5 animate-spin mx-auto" /> : editingTable ? 'อัพเดท' : 'สร้างโต๊ะ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== QR Code Modal ========== */}
+      {qrModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">QR Code โต๊ะ {qrModal.tableNumber}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">sessionId ใหม่ทุกครั้งที่ generate</p>
+              </div>
+              <button onClick={() => setQrModal(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col items-center gap-4">
+              {/* QR image */}
+              <div className="p-3 border-2 border-gray-100 rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={qrModal.qrCode} alt={`QR โต๊ะ ${qrModal.tableNumber}`} className="w-52 h-52" />
+              </div>
+
+              {/* URL preview */}
+              <div className="w-full bg-gray-50 rounded-xl px-3 py-2">
+                <p className="text-[10px] text-gray-400 mb-0.5">Order URL</p>
+                <p className="text-xs text-gray-600 break-all font-mono">{qrModal.url}</p>
+              </div>
+
+              {/* Print button */}
+              <button
+                onClick={() => {
+                  const html = `<html><head><title>QR โต๊ะ ${qrModal.tableNumber}</title>
+                    <style>
+                      body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:sans-serif;}
+                      img{width:280px;height:280px;}
+                      h2{margin:16px 0 4px;font-size:20px;}
+                      p{margin:0;font-size:11px;color:#666;word-break:break-all;max-width:320px;text-align:center;}
+                    </style></head>
+                    <body>
+                      <img src="${qrModal.qrCode}" />
+                      <h2>โต๊ะ ${qrModal.tableNumber}</h2>
+                      <p>${qrModal.url}</p>
+                      <script>window.onload=()=>{window.print();}<\/script>
+                    </body></html>`;
+                  const blob = new Blob([html], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const win = window.open(url, '_blank');
+                  win?.focus();
+                  setTimeout(() => URL.revokeObjectURL(url), 10000);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-sky-600 text-white rounded-xl hover:bg-sky-700 transition-colors font-medium"
+              >
+                <Printer className="w-4 h-4" />
+                พิมพ์ QR Code
               </button>
             </div>
           </div>
