@@ -293,7 +293,12 @@ export default function TableManagementPage() {
     if (!selectedBranch?.id) return;
     setQrLoading(true);
     try {
-      const result = await api.generateTableQrCode(String(selectedBranch.id), table.number);
+      const hostname = window.location.hostname;
+      const envSystemUrl = process.env.NEXT_PUBLIC_FOOD_ORDERING_SYSTEM_URL || 'http://localhost:3333';
+      const systemBaseUrl = hostname !== 'localhost' && hostname !== '127.0.0.1'
+        ? envSystemUrl.replace(/localhost|127\.0\.0\.1/, hostname)
+        : envSystemUrl;
+      const result = await api.generateTableQrCode(String(selectedBranch.id), table.number, systemBaseUrl);
       setQrModal({ tableNumber: table.number, url: result.url, qrCode: result.qrCode });
     } catch (err: any) {
       alert(err.message || 'ไม่สามารถสร้าง QR Code ได้');
