@@ -20,11 +20,15 @@ import {
   FolderOpen,
   RefreshCw,
   CheckCircle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import { useDialog } from '@/contexts/DialogContext';
 import PageHeader from '@/components/dashboard/PageHeader';
+
+type ThemeMode = 'LIGHT' | 'DARK';
 
 interface Branch {
   id: string;
@@ -33,6 +37,7 @@ interface Branch {
   address: string | null;
   phone: string | null;
   logo: string | null;
+  themeMode: ThemeMode;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -46,12 +51,21 @@ export default function BranchManagementPage() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [editBranch, setEditBranch] = useState<Branch | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    code: string;
+    address: string;
+    phone: string;
+    logo: string;
+    themeMode: ThemeMode;
+    isActive: boolean;
+  }>({
     name: '',
     code: '',
     address: '',
     phone: '',
     logo: '',
+    themeMode: 'LIGHT',
     isActive: true,
   });
   const [saving, setSaving] = useState(false);
@@ -153,7 +167,7 @@ export default function BranchManagementPage() {
 
   const openCreateModal = () => {
     setEditBranch(null);
-    setFormData({ name: '', code: '', address: '', phone: '', logo: '', isActive: true });
+    setFormData({ name: '', code: '', address: '', phone: '', logo: '', themeMode: 'LIGHT', isActive: true });
     setImageInputMode('upload');
     setFormError('');
     setShowModal(true);
@@ -167,6 +181,7 @@ export default function BranchManagementPage() {
       address: branch.address || '',
       phone: branch.phone || '',
       logo: branch.logo || '',
+      themeMode: branch.themeMode ?? 'LIGHT',
       isActive: branch.isActive,
     });
     setImageInputMode('upload');
@@ -195,6 +210,7 @@ export default function BranchManagementPage() {
           address: formData.address || undefined,
           phone: formData.phone || undefined,
           logo: formData.logo || undefined,
+          themeMode: formData.themeMode,
           isActive: formData.isActive,
         });
       } else {
@@ -204,6 +220,7 @@ export default function BranchManagementPage() {
           address: formData.address || undefined,
           phone: formData.phone || undefined,
           logo: formData.logo || undefined,
+          themeMode: formData.themeMode,
         });
       }
       setShowModal(false);
@@ -557,6 +574,39 @@ export default function BranchManagementPage() {
                     <p className="mt-1 text-xs text-gray-400">วาง URL รูปภาพจากเว็บไซต์ภายนอก</p>
                   </div>
                 )}
+              </div>
+
+              {/* Theme Mode */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  รูปแบบธีม (หน้าลูกค้า)
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, themeMode: 'LIGHT' })}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      formData.themeMode === 'LIGHT'
+                        ? 'border-teal-500 bg-teal-50 text-teal-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <Sun className="w-4 h-4" />
+                    Light Mode
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, themeMode: 'DARK' })}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      formData.themeMode === 'DARK'
+                        ? 'border-gray-700 bg-gray-800 text-white'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    <Moon className="w-4 h-4" />
+                    Dark Mode
+                  </button>
+                </div>
               </div>
 
               {editBranch && (

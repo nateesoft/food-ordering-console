@@ -783,13 +783,13 @@ export const api = {
 
   getBranch: (id: string) => fetchApi<any>(`/branches/${id}`),
 
-  createBranch: (data: { name: string; code: string; address?: string; phone?: string; logo?: string }) =>
+  createBranch: (data: { name: string; code: string; address?: string; phone?: string; logo?: string; themeMode?: 'LIGHT' | 'DARK' }) =>
     fetchApi<any>('/branches', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  updateBranch: (id: string, data: { name?: string; code?: string; address?: string; phone?: string; isActive?: boolean; logo?: string }) =>
+  updateBranch: (id: string, data: { name?: string; code?: string; address?: string; phone?: string; isActive?: boolean; logo?: string; themeMode?: 'LIGHT' | 'DARK' }) =>
     fetchApi<any>(`/branches/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
