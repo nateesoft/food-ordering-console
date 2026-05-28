@@ -3,14 +3,18 @@
 import { useEffect, useState, type ElementType } from 'react';
 import {
   Users, Building2, UtensilsCrossed, UserCheck, Armchair, Printer,
-  TrendingUp, RefreshCw, Calendar, Mail,
+  TrendingUp, RefreshCw, Calendar, Mail, ChevronDown,
 } from 'lucide-react';
 import { apiPath } from '@/lib/api-path';
+
+type Plan = 'FREE' | 'BASIC' | 'PRO';
 
 interface CustomerRow {
   id: string;
   username: string;
   companyName: string;
+  plan: Plan;
+  planUpdatedAt: string | null;
   branchCount: number;
   menuCount: number;
   staffCount: number;
@@ -26,6 +30,90 @@ interface Stats {
   totalTables: number;
   totalPrinters: number;
   customerList: CustomerRow[];
+}
+
+const PLAN_CONFIG: Record<Plan, { label: string; color: string; bg: string; dot: string }> = {
+  FREE:  { label: 'Free',  color: 'text-gray-600',  bg: 'bg-gray-100',   dot: 'bg-gray-400' },
+  BASIC: { label: 'Basic', color: 'text-blue-700',  bg: 'bg-blue-100',   dot: 'bg-blue-500' },
+  PRO:   { label: 'Pro',   color: 'text-purple-700', bg: 'bg-purple-100', dot: 'bg-purple-500' },
+};
+
+function PlanBadge({ plan }: { plan: Plan }) {
+  const cfg = PLAN_CONFIG[plan] ?? PLAN_CONFIG.FREE;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function PlanDropdown({
+  customerId,
+  currentPlan,
+  onUpdated,
+}: {
+  customerId: string;
+  currentPlan: Plan;
+  onUpdated: (id: string, plan: Plan) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const plans: Plan[] = ['FREE', 'BASIC', 'PRO'];
+
+  async function selectPlan(plan: Plan) {
+    if (plan === currentPlan) { setOpen(false); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(apiPath(`/api/admin/customers/${customerId}/plan`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      });
+      if (res.ok) onUpdated(customerId, plan);
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        disabled={loading}
+        className="flex items-center gap-1 hover:opacity-80 transition disabled:opacity-50"
+      >
+        <PlanBadge plan={currentPlan} />
+        <ChevronDown className="w-3 h-3 text-gray-400" />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden w-28">
+            {plans.map((p) => {
+              const cfg = PLAN_CONFIG[p];
+              return (
+                <button
+                  key={p}
+                  onClick={() => selectPlan(p)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-gray-50 transition ${
+                    p === currentPlan ? 'bg-gray-50' : ''
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                  <span className={cfg.color}>{cfg.label}</span>
+                  {p === currentPlan && <span className="ml-auto text-gray-300">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 function StatCard({ label, value, icon: Icon, color, bg }: {
@@ -49,6 +137,7 @@ export default function AdminDashboardClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState<Plan | 'ALL'>('ALL');
 
   async function fetchStats() {
     setLoading(true);
@@ -67,15 +156,35 @@ export default function AdminDashboardClient() {
 
   useEffect(() => { fetchStats(); }, []);
 
-  const filtered = stats?.customerList.filter((c) =>
-    c.companyName.toLowerCase().includes(search.toLowerCase()) ||
-    c.username.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  function handlePlanUpdated(id: string, plan: Plan) {
+    setStats((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        customerList: prev.customerList.map((c) =>
+          c.id === id ? { ...c, plan, planUpdatedAt: new Date().toISOString() } : c
+        ),
+      };
+    });
+  }
+
+  const filtered = (stats?.customerList ?? []).filter((c) => {
+    const matchSearch =
+      c.companyName.toLowerCase().includes(search.toLowerCase()) ||
+      c.username.toLowerCase().includes(search.toLowerCase());
+    const matchPlan = planFilter === 'ALL' || c.plan === planFilter;
+    return matchSearch && matchPlan;
+  });
+
+  const planCounts = {
+    FREE:  stats?.customerList.filter((c) => c.plan === 'FREE').length  ?? 0,
+    BASIC: stats?.customerList.filter((c) => c.plan === 'BASIC').length ?? 0,
+    PRO:   stats?.customerList.filter((c) => c.plan === 'PRO').length   ?? 0,
+  };
 
   return (
     <div className="bg-gray-50 min-h-full">
       <div className="p-6 md:p-8">
-        {/* Page heading */}
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
@@ -112,6 +221,30 @@ export default function AdminDashboardClient() {
               <StatCard label="เครื่องพิมพ์ทั้งหมด" value={stats.totalPrinters} icon={Printer} color="text-violet-600" bg="bg-violet-100" />
             </div>
 
+            {/* Plan Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              {(['FREE', 'BASIC', 'PRO'] as Plan[]).map((p) => {
+                const cfg = PLAN_CONFIG[p];
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPlanFilter((prev) => (prev === p ? 'ALL' : p))}
+                    className={`rounded-2xl p-5 text-left transition border-2 ${
+                      planFilter === p
+                        ? `${cfg.bg} border-current ${cfg.color}`
+                        : 'bg-white border-transparent shadow-md hover:shadow-lg'
+                    }`}
+                  >
+                    <p className={`text-2xl font-bold ${cfg.color}`}>{planCounts[p]}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                      <span className="text-sm text-gray-500">{cfg.label} Plan</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Growth Indicator */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-white mb-8 flex items-center gap-5">
               <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -130,7 +263,17 @@ export default function AdminDashboardClient() {
             {/* Customer Table */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-lg font-bold text-gray-800">รายชื่อลูกค้าที่ลงทะเบียน</h3>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-bold text-gray-800">รายชื่อลูกค้าที่ลงทะเบียน</h3>
+                  {planFilter !== 'ALL' && (
+                    <button
+                      onClick={() => setPlanFilter('ALL')}
+                      className="text-xs text-gray-400 hover:text-gray-600 underline"
+                    >
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -145,6 +288,7 @@ export default function AdminDashboardClient() {
                     <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
                       <th className="text-left px-6 py-3 font-semibold">บริษัท</th>
                       <th className="text-left px-6 py-3 font-semibold">Email</th>
+                      <th className="text-left px-4 py-3 font-semibold">Plan</th>
                       <th className="text-center px-4 py-3 font-semibold">สาขา</th>
                       <th className="text-center px-4 py-3 font-semibold">เมนู</th>
                       <th className="text-center px-4 py-3 font-semibold">พนักงาน</th>
@@ -155,8 +299,8 @@ export default function AdminDashboardClient() {
                   <tbody className="divide-y divide-gray-50">
                     {filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="text-center py-12 text-gray-400">
-                          {search ? 'ไม่พบผลลัพธ์' : 'ยังไม่มีลูกค้าลงทะเบียน'}
+                        <td colSpan={8} className="text-center py-12 text-gray-400">
+                          {search || planFilter !== 'ALL' ? 'ไม่พบผลลัพธ์' : 'ยังไม่มีลูกค้าลงทะเบียน'}
                         </td>
                       </tr>
                     ) : filtered.map((c) => (
@@ -174,6 +318,13 @@ export default function AdminDashboardClient() {
                             <Mail className="w-4 h-4 text-gray-400" />
                             {c.username}
                           </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <PlanDropdown
+                            customerId={c.id}
+                            currentPlan={c.plan ?? 'FREE'}
+                            onUpdated={handlePlanUpdated}
+                          />
                         </td>
                         <td className="px-4 py-4 text-center">
                           <span className="inline-flex items-center justify-center w-8 h-8 bg-teal-100 text-teal-700 rounded-full font-bold text-xs">

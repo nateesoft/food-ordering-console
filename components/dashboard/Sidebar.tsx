@@ -7,7 +7,7 @@ import {
   UtensilsCrossed, ChevronLeft, ChevronRight, ChevronDown,
   Menu, BarChart3, Users, Package, Building2,
   Webhook, Armchair, FileText, BadgeInfo, LogOut, User,
-  Printer, LayoutDashboard, ShieldCheck, Settings,
+  Printer, LayoutDashboard, ShieldCheck, Settings, Crown,
 } from 'lucide-react';
 import { useBranch } from '@/contexts/BranchContext';
 import { apiPath } from '@/lib/api-path';
@@ -25,10 +25,19 @@ interface NavGroup {
   items: NavItem[];
 }
 
+type ConsolePlan = 'FREE' | 'BASIC' | 'PRO';
+
+const PLAN_CONFIG: Record<ConsolePlan, { label: string; textColor: string; bg: string; dot: string }> = {
+  FREE:  { label: 'Free',  textColor: 'text-gray-300',   bg: 'bg-white/10',        dot: 'bg-gray-400'   },
+  BASIC: { label: 'Basic', textColor: 'text-blue-200',   bg: 'bg-blue-500/20',     dot: 'bg-blue-400'   },
+  PRO:   { label: 'Pro',   textColor: 'text-purple-200', bg: 'bg-purple-500/20',   dot: 'bg-purple-400' },
+};
+
 interface SidebarProps {
   username: string;
   role: string;
   companyName?: string;
+  plan?: ConsolePlan;
 }
 
 // ── Menu definition (customer role) ────────────────────────────────────────
@@ -194,7 +203,7 @@ function SidebarGroup({ group, collapsed, pathname }: { group: NavGroup; collaps
 }
 
 // ── Main Sidebar ───────────────────────────────────────────────────────────
-export default function Sidebar({ username, role, companyName }: SidebarProps) {
+export default function Sidebar({ username, role, companyName, plan = 'FREE' }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isCustomer = role === 'customer';
@@ -299,6 +308,28 @@ export default function Sidebar({ username, role, companyName }: SidebarProps) {
       {/* Divider */}
       <div className="border-t border-white/10 flex-shrink-0" />
 
+      {/* Plan link (customer only) */}
+      {isCustomer && (
+        <div className={`px-3 pt-2 flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
+          <Link
+            href="/customer/plan"
+            title={collapsed ? `แพ็กเกจ: ${PLAN_CONFIG[plan].label}` : undefined}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition ${collapsed ? 'w-10 h-10 justify-center' : 'w-full'} ${isActive('/customer/plan', pathname) ? 'bg-white text-indigo-700 font-semibold shadow-sm' : 'text-indigo-100 hover:bg-white/15 hover:text-white'}`}
+          >
+            <Crown className="w-4 h-4 flex-shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="flex-1">แพ็กเกจ</span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${PLAN_CONFIG[plan].bg} ${PLAN_CONFIG[plan].textColor}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${PLAN_CONFIG[plan].dot}`} />
+                  {PLAN_CONFIG[plan].label}
+                </span>
+              </>
+            )}
+          </Link>
+        </div>
+      )}
+
       {/* User section */}
       <div ref={userMenuRef} className={`px-3 py-3 relative flex-shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
         <button
@@ -322,7 +353,18 @@ export default function Sidebar({ username, role, companyName }: SidebarProps) {
           <div className={`absolute bottom-full mb-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 ${collapsed ? 'left-14 w-44' : 'left-3 right-3'}`}>
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-800 truncate">{username}</p>
-              <p className="text-xs text-gray-400">{role === 'system_admin' ? 'System Admin' : 'Customer'}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-gray-400">{role === 'system_admin' ? 'System Admin' : 'Customer'}</p>
+                {role === 'customer' && (
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                    plan === 'PRO' ? 'bg-purple-100 text-purple-700' :
+                    plan === 'BASIC' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-500'
+                  }`}>
+                    {PLAN_CONFIG[plan].label}
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={handleLogout}
