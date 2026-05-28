@@ -22,7 +22,10 @@ import {
   CheckCircle,
   Sun,
   Moon,
+  QrCode,
+  Printer,
 } from 'lucide-react';
+import QRCodeLib from 'qrcode';
 import { api } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import { useDialog } from '@/contexts/DialogContext';
@@ -47,6 +50,10 @@ export default function BranchManagementPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // QR modal state
+  const [qrModalBranch, setQrModalBranch] = useState<Branch | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -247,6 +254,73 @@ export default function BranchManagementPage() {
     }
   };
 
+  const buildOrdersUrl = (branchId: string) => {
+    const systemUrl = process.env.NEXT_PUBLIC_FOOD_ORDERING_SYSTEM_URL ?? window.location.origin;
+    return `${systemUrl}/food-ordering/${branchId}/orders`;
+  };
+
+  const handleShowQrModal = async (branch: Branch) => {
+    const url = buildOrdersUrl(branch.id);
+    const dataUrl = await QRCodeLib.toDataURL(url, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' },
+    });
+    setQrDataUrl(dataUrl);
+    setQrModalBranch(branch);
+  };
+
+  const printBranchQr = async (branch: Branch) => {
+    const url = buildOrdersUrl(branch.id);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const dataUrl = await QRCodeLib.toDataURL(url, { width: 500, margin: 2 });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - ${branch.name}</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 40px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              font-family: Arial, sans-serif;
+            }
+            .container {
+              text-align: center;
+              border: 3px solid #000;
+              padding: 30px;
+              border-radius: 15px;
+            }
+            h1 { font-size: 36px; margin: 0 0 10px 0; color: #000; }
+            .subtitle { font-size: 20px; color: #555; margin: 0 0 20px 0; }
+            img { width: 400px; height: 400px; margin: 20px 0; }
+            .instruction { font-size: 22px; margin: 20px 0 5px 0; color: #333; }
+            .url { font-size: 12px; color: #888; margin-top: 10px; word-break: break-all; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>${branch.name}</h1>
+            <p class="subtitle">รหัสสาขา: ${branch.code}</p>
+            <img src="${dataUrl}" alt="QR Code" />
+            <p class="instruction">สแกน QR Code เพื่อดูรายการออร์เดอร์</p>
+            <p class="url">${url}</p>
+          </div>
+          <script>window.onload = () => { window.print(); window.close(); }<\/script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const filteredBranches = branches.filter(
     (b) =>
       b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -293,6 +367,7 @@ export default function BranchManagementPage() {
                   <th className="text-left p-4 text-sm font-semibold text-gray-600">ที่อยู่</th>
                   <th className="text-left p-4 text-sm font-semibold text-gray-600">โทรศัพท์</th>
                   <th className="text-center p-4 text-sm font-semibold text-gray-600">สถานะ</th>
+                  <th className="text-center p-4 text-sm font-semibold text-gray-600">QR Orders</th>
                   <th className="text-center p-4 text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
@@ -354,6 +429,15 @@ export default function BranchManagementPage() {
                         </span>
                       )}
                     </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => handleShowQrModal(branch)}
+                        className="p-2 hover:bg-teal-100 rounded-lg transition-colors"
+                        title="QR Code Orders"
+                      >
+                        <QrCode className="w-5 h-5 text-teal-600" />
+                      </button>
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
@@ -376,7 +460,7 @@ export default function BranchManagementPage() {
                 ))}
                 {filteredBranches.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-gray-400 text-lg">
+                    <td colSpan={7} className="text-center py-12 text-gray-400 text-lg">
                       ไม่พบข้อมูลสาขา
                     </td>
                   </tr>
@@ -646,6 +730,38 @@ export default function BranchManagementPage() {
               >
                 <Save className="w-5 h-5" />
                 {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Orders Modal */}
+      {qrModalBranch && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-teal-600" />
+                <h2 className="text-lg font-bold text-gray-800">QR Orders — {qrModalBranch.name}</h2>
+              </div>
+              <button onClick={() => setQrModalBranch(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 flex flex-col items-center gap-4">
+              {qrDataUrl && (
+                <img src={qrDataUrl} alt="QR Code" className="w-56 h-56 rounded-xl border border-gray-200" />
+              )}
+              <p className="text-xs text-gray-500 text-center break-all px-2">
+                {buildOrdersUrl(qrModalBranch.id)}
+              </p>
+              <button
+                onClick={() => printBranchQr(qrModalBranch)}
+                className="flex items-center gap-2 w-full justify-center bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 rounded-xl font-semibold transition-colors"
+              >
+                <Printer className="w-5 h-5" />
+                พิมพ์ QR Code
               </button>
             </div>
           </div>
