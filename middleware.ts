@@ -4,13 +4,13 @@ import { SessionPayload } from '@/types';
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
 const SECRET = process.env.JWT_SECRET || 'food-ordering-console-secret-key-2024';
 
-function base64UrlDecode(str: string): ArrayBuffer {
+function base64UrlDecode(str: string): Uint8Array {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes.buffer;
+  return bytes;
 }
 
 async function verifyJWT(token: string): Promise<SessionPayload | null> {

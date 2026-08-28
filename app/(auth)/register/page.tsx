@@ -61,17 +61,15 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(apiPath('/api/auth/register'), {
+      const payload: Record<string, string> = { username, password, companyName };
+      if (companyAddress.trim()) payload.companyAddress = companyAddress.trim();
+      if (companyPhone.trim()) payload.companyPhone = companyPhone.trim();
+      if (companyEmail.trim()) payload.companyEmail = companyEmail.trim();
+
+      const res = await fetch(apiPath('/api/console/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          password,
-          companyName,
-          companyAddress,
-          companyPhone,
-          companyEmail,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
