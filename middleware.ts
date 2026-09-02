@@ -4,11 +4,11 @@ import { SessionPayload } from '@/types';
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
 const SECRET = process.env.JWT_SECRET || 'food-ordering-console-secret-key-2024';
 
-function base64UrlDecode(str: string): Uint8Array {
+function base64UrlDecode(str: string): Uint8Array<ArrayBuffer> {
   const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
   const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
