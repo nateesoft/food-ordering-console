@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import ServiceStatusIndicator from '@/components/ServiceStatusIndicator';
 
 export const metadata: Metadata = {
   title: 'Food Ordering Console',
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <ServiceStatusIndicator />
+      </body>
     </html>
   );
 }
